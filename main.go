@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/router"
+	"github.com/wmaldonadoc/academy-go-q42021/registry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -20,9 +21,11 @@ func bootingGlobalLogger() *zap.Logger {
 func main() {
 	loggerMgr := bootingGlobalLogger()
 	zap.ReplaceGlobals(loggerMgr)
-	defer loggerMgr.Sync() // flushes buffer, if any
+	defer loggerMgr.Sync()
 	logger := loggerMgr.Sugar()
 
+	r := registry.NewRegistry()
+
 	logger.Debug("Booting routes...")
-	router.NewRouter()
+	router.NewRouter(r.NewAppController())
 }

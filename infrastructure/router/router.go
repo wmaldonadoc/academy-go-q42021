@@ -3,19 +3,18 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/wmaldonadoc/academy-go-q42021/config"
-	"go.uber.org/zap"
+	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
 )
 
-func NewRouter() {
+func NewRouter(c controller.AppController) {
 	host := config.GetEnvVariable("BASE_HOST")
+
 	router := gin.Default()
 
-	router.GET("/ping", func(c *gin.Context) {
-		zap.S().Info("Testing global")
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	// router.Use(middleware.Logger())
+	// router.Use(middleware.Recover())
+
+	router.GET("/ping", func(context *gin.Context) { c.Pokemon.GetById(context) })
 
 	router.Run(host)
 
