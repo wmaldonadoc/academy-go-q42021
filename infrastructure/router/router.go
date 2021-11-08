@@ -11,14 +11,17 @@ func NewRouter(c controller.AppController) {
 
 	router := gin.Default()
 
-	pokemonRoutes := router.Group("/pokemons")
+	mainGroup := router.Group("/api/v1")
 	{
-		pokemonRoutes.GET("/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
-	}
+		pokemonRoutes := mainGroup.Group("/pokemons")
+		{
+			pokemonRoutes.GET("/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
+		}
 
-	healthRoutes := router.Group("/health")
-	{
-		healthRoutes.GET("/", func(context *gin.Context) { c.Health.GetServiceHealth(context) })
+		healthRoutes := mainGroup.Group("/health")
+		{
+			healthRoutes.GET("/", func(context *gin.Context) { c.Health.GetServiceHealth(context) })
+		}
 	}
 
 	router.Run(port)
