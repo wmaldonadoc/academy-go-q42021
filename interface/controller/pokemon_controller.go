@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
+	"github.com/wmaldonadoc/academy-go-q42021/interface/cerrors"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 	"go.uber.org/zap"
 )
@@ -33,10 +33,16 @@ func (pc *pokemonController) GetById(c Context) {
 		}
 		if p == nil {
 			zap.S().Errorf("Pokemon not found with id %s", requestId)
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "NotFound"})
+			notFound := cerrors.PokemonNotFoundException()
+			c.AbortWithStatusJSON(http.StatusNotFound, notFound)
 			return
 		}
 		c.JSON(http.StatusOK, p)
+	} else {
+		zap.S().Errorf("The id should be a integer %s", requestId)
+		parseError := cerrors.ParseTypesException("string", "int")
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, parseError)
+		return
 	}
 
 }
