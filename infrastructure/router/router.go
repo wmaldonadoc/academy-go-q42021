@@ -7,12 +7,9 @@ import (
 )
 
 func NewRouter(c controller.AppController) {
-	host := config.GetEnvVariable("BASE_HOST")
+	host := config.GetEnvVariable("PORT")
 
 	router := gin.Default()
-
-	// router.Use(middleware.Logger())
-	// router.Use(middleware.Recover())
 
 	router.GET("/api/pokemon/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
 
