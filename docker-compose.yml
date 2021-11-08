@@ -5,10 +5,16 @@ services:
     build:
       context: .
       dockerfile: .
+      args:
+        PORT: ${EXPOSE_PORT}
     container_name: go_app
     restart: always
     volumes:
       - ./:/usr/src/app
+    env_file: 
+      - .env
+    environment:
+      - PORT
     ports:
-      - "3000:3000"
+      - ${EXPOSE_PORT}:${EXPOSE_PORT}
     # network_mode: host
