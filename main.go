@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/router"
 	"github.com/wmaldonadoc/academy-go-q42021/registry"
 	"go.uber.org/zap"
@@ -24,6 +25,7 @@ func main() {
 	defer loggerMgr.Sync()
 	logger := loggerMgr.Sugar()
 
+	datastore.NewDb()
 	r := registry.NewRegistry()
 
 	logger.Debug("Booting routes...")

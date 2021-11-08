@@ -14,7 +14,7 @@ func NewRouter(c controller.AppController) {
 	// router.Use(middleware.Logger())
 	// router.Use(middleware.Recover())
 
-	router.GET("/ping", func(context *gin.Context) { c.Pokemon.GetById(context) })
+	router.GET("/api/pokemon/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
 
 	router.Run(host)
 
