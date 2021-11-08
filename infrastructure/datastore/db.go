@@ -44,7 +44,7 @@ func openFile() [][]string {
 	return chunks
 }
 
-func NewDb() {
+func NewDb() []*model.Pokemon {
 	pokemones := []*model.Pokemon{}
 	chunks := openFile()
 	zap.S().Debug("-------- START READING CSV --------")
@@ -67,4 +67,6 @@ func NewDb() {
 	}
 	zap.S().Debug("-------- END READING CSV --------")
 	zap.S().Debugf("Pokemons availables: %q", pokemones)
+
+	return pokemones
 }
