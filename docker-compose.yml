@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: .
     container_name: go_app
-    # restart: always
+    restart: always
     volumes:
       - ./:/usr/src/app
     ports:

@@ -7,12 +7,20 @@ import (
 )
 
 func NewRouter(c controller.AppController) {
-	host := config.GetEnvVariable("PORT")
+	port := config.GetEnvVariable("PORT")
 
 	router := gin.Default()
 
-	router.GET("/api/pokemon/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
+	pokemonRoutes := router.Group("/pokemons")
+	{
+		pokemonRoutes.GET("/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
+	}
 
-	router.Run(host)
+	healthRoutes := router.Group("/health")
+	{
+		healthRoutes.GET("/", func(context *gin.Context) { c.Health.GetServiceHealth(context) })
+	}
+
+	router.Run(port)
 
 }

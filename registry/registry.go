@@ -15,5 +15,6 @@ func NewRegistry() Registry {
 func (r *registry) NewAppController() controller.AppController {
 	return controller.AppController{
 		Pokemon: r.NewPokemonController(),
+		Health:  r.NewHealthController(),
 	}
 }
