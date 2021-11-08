@@ -25,8 +25,8 @@ func main() {
 	defer loggerMgr.Sync()
 	logger := loggerMgr.Sugar()
 
-	datastore.NewDb()
-	r := registry.NewRegistry()
+	db := datastore.NewDb()
+	r := registry.NewRegistry(db)
 
 	logger.Debug("Booting routes...")
 	router.NewRouter(r.NewAppController())

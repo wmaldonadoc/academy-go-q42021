@@ -2,7 +2,9 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 	"go.uber.org/zap"
 )
@@ -20,12 +22,21 @@ func NewPokemonController(pi interactor.PokemonInteractor) PokemonController {
 }
 
 func (pc *pokemonController) GetById(c Context) {
-	id := 0
-	pokemonId := c.Param("id")
-	zap.S().Infof("Pokemon id %s", pokemonId)
-	p, _ := pc.pokemonInteractor.GetById(id)
-	// if err != nil {
-	// 	return err
-	// }
-	c.JSON(http.StatusOK, p)
+	requestId := c.Param("id")
+	if pokemonId, err := strconv.Atoi(requestId); err == nil {
+		zap.S().Infof("Searching Pokemon with id %s", pokemonId)
+		p, err := pc.pokemonInteractor.GetById(pokemonId)
+		if err != nil {
+			zap.S().Errorf("Error seaching pokemon by id %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+			return
+		}
+		if p == nil {
+			zap.S().Errorf("Pokemon not found with id %s", requestId)
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "NotFound"})
+			return
+		}
+		c.JSON(http.StatusOK, p)
+	}
+
 }

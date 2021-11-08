@@ -67,6 +67,5 @@ func NewDb() []*model.Pokemon {
 	}
 	zap.S().Debug("-------- END READING CSV --------")
 	zap.S().Debugf("Pokemons availables: %q", pokemones)
-
 	return pokemones
 }
