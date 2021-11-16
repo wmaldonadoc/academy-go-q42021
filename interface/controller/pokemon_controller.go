@@ -15,14 +15,14 @@ type pokemonController struct {
 }
 
 type PokemonController interface {
-	GetById(c Context)
+	GetByID(c Context)
 }
 
 func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 	return &pokemonController{pi}
 }
 
-func (pc *pokemonController) GetById(c Context) {
+func (pc *pokemonController) GetByID(c Context) {
 	requestId := c.Param("id")
 	if pokemonId, err := strconv.Atoi(requestId); err == nil {
 		p, err := pc.pokemonInteractor.GetByID(pokemonId)
@@ -37,17 +37,10 @@ func (pc *pokemonController) GetById(c Context) {
 
 			return
 		}
-		if p == nil {
-			zap.S().Errorf("Pokemon not found with id %s", requestId)
-			notFound := exceptions.PokemonNotFoundException()
-			c.AbortWithStatusJSON(http.StatusNotFound, notFound)
-
-			return
-		}
 		c.JSON(http.StatusOK, p)
 	} else {
 		zap.S().Errorf("The id should be a integer %s", requestId)
-		parseError := exceptions.ParseTypesException("string", "int")
+		parseError := exceptions.UnprocessableEntityException("The id should be a integer")
 		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, parseError)
 
 		return

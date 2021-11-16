@@ -28,6 +28,14 @@ func GenericException(message string, httpStatus int, code int) *RequestError {
 	}
 }
 
+func UnprocessableEntityException(message string) *RequestError {
+	return &RequestError{
+		Message:    message,
+		HTTPStatus: http.StatusUnprocessableEntity,
+		Code:       constants.UnprocessableEntityExceptionCode,
+	}
+}
+
 func ParseTypesException(source string, target string) *RequestError {
 	return &RequestError{
 		Message:    "Error parsing data from " + source + " to " + target,
