@@ -25,10 +25,7 @@ func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 func (pc *pokemonController) GetById(c Context) {
 	requestId := c.Param("id")
 	if pokemonId, err := strconv.Atoi(requestId); err == nil {
-		zap.S().Infof("Searching Pokemon with id %s", pokemonId)
 		p, err := pc.pokemonInteractor.GetByID(pokemonId)
-		zap.S().Infof("Pokemon given %s", p)
-		zap.S().Infof("Error %s", err)
 		if err != nil {
 			zap.S().Errorf("Error searching pokemon by id %s", err)
 			genericException := exceptions.GenericException(
