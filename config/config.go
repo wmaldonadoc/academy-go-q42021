@@ -1,16 +1,16 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 func GetEnvVariable(key string) string {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Cant read .env file")
+	if err := godotenv.Load(); err != nil {
+		zap.S().Error("Cant read .env file")
 	}
+
 	return os.Getenv(key)
 }

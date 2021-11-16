@@ -20,6 +20,6 @@ func NewHealthController() HealthController {
 func (hc *healthController) GetServiceHealth(c Context) {
 	startTime := time.Now()
 	uptime := time.Since(startTime)
-	health := model.Health{Uptime: uptime, StatusCode: 200}
+	health := model.Health{Uptime: uptime, StatusCode: http.StatusOK}
 	c.JSON(http.StatusOK, health)
 }

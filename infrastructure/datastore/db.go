@@ -10,6 +10,7 @@ import (
 
 	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
+
 	"go.uber.org/zap"
 )
 
@@ -18,7 +19,6 @@ func openFile() [][]string {
 	file, err := os.Open(fileLocation)
 	if err != nil {
 		zap.S().Errorf("Error opening the CSV file %s", err)
-
 	}
 	zap.S().Info("Successfully openned csv file")
 
@@ -44,7 +44,7 @@ func openFile() [][]string {
 	return chunks
 }
 
-func NewDb() []*model.Pokemon {
+func NewCSV() []*model.Pokemon {
 	pokemones := []*model.Pokemon{}
 	chunks := openFile()
 	zap.S().Debug("-------- START READING CSV --------")
@@ -66,6 +66,7 @@ func NewDb() []*model.Pokemon {
 		}
 	}
 	zap.S().Debug("-------- END READING CSV --------")
-	zap.S().Debugf("Pokemons availables: %q", pokemones)
+	zap.S().Debugf("Pokemons availables: %s", pokemones)
+
 	return pokemones
 }

@@ -8,7 +8,7 @@ type PokemonPresenter interface {
 	ResponsePokemon(p *model.Pokemon) *model.Pokemon
 }
 
-func NewPokemonPresenter() PokemonPresenter {
+func NewPokemonPresenter() *pokemonPresenter {
 	return &pokemonPresenter{}
 }
 

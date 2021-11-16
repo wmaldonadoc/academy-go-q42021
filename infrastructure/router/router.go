@@ -1,29 +1,26 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
+
+	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(c controller.AppController) {
+func NewRouter(controller controller.AppController) {
 	port := config.GetEnvVariable("PORT")
-
 	router := gin.Default()
-
 	mainGroup := router.Group("/api/v1")
 	{
 		pokemonRoutes := mainGroup.Group("/pokemons")
 		{
-			pokemonRoutes.GET("/:id", func(context *gin.Context) { c.Pokemon.GetById(context) })
+			pokemonRoutes.GET("/:id", func(context *gin.Context) { controller.Pokemon.GetById(context) })
 		}
 
 		healthRoutes := mainGroup.Group("/health")
 		{
-			healthRoutes.GET("/", func(context *gin.Context) { c.Health.GetServiceHealth(context) })
+			healthRoutes.GET("/", func(context *gin.Context) { controller.Health.GetServiceHealth(context) })
 		}
 	}
-
 	router.Run(port)
-
 }

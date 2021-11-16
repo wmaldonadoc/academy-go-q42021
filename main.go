@@ -1,9 +1,12 @@
 package main
 
 import (
+	"log"
+
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/router"
 	"github.com/wmaldonadoc/academy-go-q42021/registry"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -15,17 +18,22 @@ func bootingGlobalLogger() *zap.Logger {
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	logger, _ := config.Build()
-	return logger
 
+	return logger
 }
 
 func main() {
 	loggerMgr := bootingGlobalLogger()
 	zap.ReplaceGlobals(loggerMgr)
-	defer loggerMgr.Sync()
+	defer func() {
+		err := loggerMgr.Sync()
+		if err != nil {
+			log.Fatalf("Error setting logger %s", err)
+		}
+	}()
 	logger := loggerMgr.Sugar()
 
-	db := datastore.NewDb()
+	db := datastore.NewCSV()
 	r := registry.NewRegistry(db)
 
 	logger.Debug("Booting routes...")

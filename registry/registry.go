@@ -13,7 +13,7 @@ type Registry interface {
 	NewAppController() controller.AppController
 }
 
-func NewRegistry(db []*model.Pokemon) Registry {
+func NewRegistry(db []*model.Pokemon) *registry {
 	return &registry{db}
 }
 
