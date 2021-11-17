@@ -7,4 +7,5 @@ import (
 
 type PokemonRepository interface {
 	FindById(id int) (*model.Pokemon, *exceptions.RepositoryError)
+	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError)
 }

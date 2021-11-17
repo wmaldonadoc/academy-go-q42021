@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/api"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
 	ip "github.com/wmaldonadoc/academy-go-q42021/interface/presenter"
 	ir "github.com/wmaldonadoc/academy-go-q42021/interface/repository"
@@ -14,7 +15,7 @@ func (r *registry) NewPokemonController() controller.PokemonController {
 }
 
 func (r *registry) NewPokemonInteractor() interactor.PokemonInteractor {
-	return interactor.NewPokemonInteractor(r.NewPokemonRepository(), r.NewPokemonPresenter())
+	return interactor.NewPokemonInteractor(r.NewPokemonRepository(), r.NewPokemonPresenter(), api.NewApiClient())
 }
 
 func (r *registry) NewPokemonRepository() ur.PokemonRepository {

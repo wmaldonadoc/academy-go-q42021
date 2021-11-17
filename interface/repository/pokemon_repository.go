@@ -7,6 +7,7 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/exceptions"
+	"go.uber.org/zap"
 )
 
 type pokemonRepository struct {
@@ -15,6 +16,7 @@ type pokemonRepository struct {
 
 type PokemonRepository interface {
 	FindById(id int) (*model.Pokemon, *exceptions.RepositoryError)
+	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError)
 }
 
 func NewPokemonRepository(db []*model.Pokemon) *pokemonRepository {
@@ -30,8 +32,14 @@ func (pr *pokemonRepository) FindById(id int) (*model.Pokemon, *exceptions.Repos
 	repositoryError := exceptions.NewErrorWrapper(
 		constants.NotFoundExceptionCode,
 		errors.New("pokemon not found"),
-		"pokemon not found",
+		"Pokemon not found",
 		http.StatusNotFound,
 	)
 	return nil, &repositoryError
+}
+
+func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError) {
+	pr.db = append(pr.db, pokemon)
+	zap.S().Infof("New array: %s", pr.db)
+	return nil, nil
 }
