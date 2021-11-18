@@ -8,38 +8,44 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/api"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/vendors"
+
 	"go.uber.org/zap"
 )
 
 type pokemonPresenter struct{}
 
+// PokemonPresenter - Holds an abstraction of presenter methods.
 type PokemonPresenter interface {
 	ResponsePokemon(p *model.Pokemon) *model.Pokemon
-	MappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon
+	ResponseMappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon
 }
 
+// NewPokemonPresenter - Create and returns a concret instance of pokemonPresenter.
 func NewPokemonPresenter() *pokemonPresenter {
 	return &pokemonPresenter{}
 }
 
+// ResponsePokemon - Returns the Pokemon given.
 func (pp *pokemonPresenter) ResponsePokemon(p *model.Pokemon) *model.Pokemon {
 	return p
 }
 
-func (pp *pokemonPresenter) MappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon {
+// ResponseMappedPokemonFromAPI - Receives an ApiResponse, deserialize the JSON string and mapped to Pokemon model.
+// It will generate a random ID (between 10 - 1000) and pick the first ability in the response.
+func (pp *pokemonPresenter) ResponseMappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon {
 	// Generating random id
 	rand.Seed(time.Now().UnixNano())
 	max := 1000
 	min := 10
 	id := rand.Intn(max-min+1) + min
-	zap.S().Infof("PRESENTER: ID generate %i", id)
+	zap.S().Info("PRESENTER: ID generate: ", id)
 	// mapping & deserialize JSON
 	var responseObject vendors.Response
 	json.Unmarshal([]byte(p.Body), &responseObject)
 	pokemon := model.Pokemon{
 		ID:      id,
 		Name:    responseObject.Name,
-		Ability: "test",
+		Ability: responseObject.Abilities[0].Ability.Name,
 	}
 	zap.S().Infof("PRESENTER: New pokemon generated %s", pokemon)
 

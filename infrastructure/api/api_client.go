@@ -7,20 +7,29 @@ import (
 
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/exceptions"
+
 	"go.uber.org/zap"
 )
 
+/*
+	ApiResponse - Represents an abstraction of HTTP response.
+	- Headers: HTTP response headers
+	- Body: HTTP response body as string
+	- HTTPStatus: HTTP response status
+*/
 type ApiResponse struct {
 	Headers    interface{}
 	Body       string
 	HTTPStatus int
 }
 
+// NewApiClient - Returns an instance of ApiResponse
 func NewApiClient() *ApiResponse {
 	return &ApiResponse{}
 }
 
-func (a *ApiResponse) Get(url string) (*ApiResponse, *exceptions.APIClientException) {
+// Get - Make a HTTP request and returns the response mapped to ApiResponse
+func (a *ApiResponse) Get(url string) (*ApiResponse, *exceptions.APIClientError) {
 	if resp, err := http.Get(url); err == nil {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
@@ -50,5 +59,6 @@ func (a *ApiResponse) Get(url string) (*ApiResponse, *exceptions.APIClientExcept
 		"Error in GET request",
 		http.StatusBadRequest,
 	)
+
 	return nil, &requestError
 }

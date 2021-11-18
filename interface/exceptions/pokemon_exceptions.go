@@ -6,12 +6,19 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 )
 
+/*
+	RequestError - Represents exceptions with the following fields:
+	- Message
+	- HTTPStatus
+	- Code: Represents a custom error code
+*/
 type RequestError struct {
 	Message    string
 	HTTPStatus int
 	Code       int
 }
 
+// PokemonNotFoundException - Creates and return an instance of RequestError with default values.
 func PokemonNotFoundException() *RequestError {
 	return &RequestError{
 		Message:    "Pokemon not found.",
@@ -20,6 +27,7 @@ func PokemonNotFoundException() *RequestError {
 	}
 }
 
+// GenericException - Creates and return an instance of RequestError given a message, httpStatus and code.
 func GenericException(message string, httpStatus int, code int) *RequestError {
 	return &RequestError{
 		Message:    message,
@@ -28,6 +36,7 @@ func GenericException(message string, httpStatus int, code int) *RequestError {
 	}
 }
 
+// UnprocessableEntityException - Creates and return an instance of RequestError given a message.
 func UnprocessableEntityException(message string) *RequestError {
 	return &RequestError{
 		Message:    message,
@@ -36,6 +45,7 @@ func UnprocessableEntityException(message string) *RequestError {
 	}
 }
 
+// ParseTypesException - Creates and return an instance of RequestError given a source & target types.
 func ParseTypesException(source string, target string) *RequestError {
 	return &RequestError{
 		Message:    "Error parsing data from " + source + " to " + target,

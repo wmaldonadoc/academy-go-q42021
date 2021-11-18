@@ -9,14 +9,18 @@ import (
 
 type healthController struct{}
 
+// HealthController - Holds the abstraction of controller methods.
 type HealthController interface {
+	// GetServiceHealth - Calculate the uptime and return an instance of Health.
 	GetServiceHealth(c Context)
 }
 
-func NewHealthController() HealthController {
+// NewHealthController - Create and returns an instance of healthController.
+func NewHealthController() *healthController {
 	return &healthController{}
 }
 
+// GetServiceHealth - Calculate the uptime and return an instance of Health.
 func (hc *healthController) GetServiceHealth(c Context) {
 	startTime := time.Now()
 	uptime := time.Since(startTime)

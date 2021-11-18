@@ -1,14 +1,22 @@
 package exceptions
 
-type APIClientException struct {
+/*
+	APIClientError - Represents exceptions with the following fields:
+	- Message
+	- HTTPStatus
+	- Code: Represents a custom error code
+	- Err: An Error from errors package
+*/
+type APIClientError struct {
 	Message    string `json:"message"`
 	HTTPStatus int    `json:"httpStatus"`
 	Code       int    `json:"-"`
 	Err        error  `json:"-"`
 }
 
-func NewErrorWrapper(code int, err error, message string, httpStatus int) APIClientException {
-	return APIClientException{
+// NewErrorWrapper - Create and returns an instance of APIClientError
+func NewErrorWrapper(code int, err error, message string, httpStatus int) APIClientError {
+	return APIClientError{
 		Message:    message,
 		HTTPStatus: httpStatus,
 		Code:       code,
@@ -16,7 +24,8 @@ func NewErrorWrapper(code int, err error, message string, httpStatus int) APICli
 	}
 }
 
-func (err APIClientException) Error() string {
+// Error - Returns the built-in error/message passend in the wrapped function.
+func (err APIClientError) Error() string {
 	if err.Err != nil {
 		return err.Err.Error()
 	}

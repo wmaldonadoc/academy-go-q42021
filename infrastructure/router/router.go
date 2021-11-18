@@ -5,11 +5,12 @@ import (
 
 	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
-	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
+// NewRouter - Setup & returns the API routes.
 func NewRouter(controller controller.AppController) {
 	port := config.GetEnvVariable("PORT")
 	router := gin.Default()

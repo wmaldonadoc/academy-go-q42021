@@ -44,6 +44,7 @@ func openFile() [][]string {
 	return chunks
 }
 
+// NewCSV - Open and reads a CSV file and return it as a slice of pokemons.
 func NewCSV() []*model.Pokemon {
 	pokemones := []*model.Pokemon{}
 	chunks := openFile()
