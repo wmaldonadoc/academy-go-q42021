@@ -23,18 +23,38 @@
 			"response": []
 		},
 		{
-			"name": "Get pokemon by id",
+			"name": "Get pokemon by name",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{URL}}/pokemons/1",
+					"raw": "{{URL}}/pokemons/name/ditto",
 					"host": [
 						"{{URL}}"
 					],
 					"path": [
 						"pokemons",
-						"1"
+						"name",
+						"ditto"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get pokemon by name",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL}}/pokemons/name/ditto",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"pokemons",
+						"name",
+						"ditto"
 					]
 				}
 			},
