@@ -51,7 +51,8 @@ func (pr *pokemonRepository) FindById(id int) (*model.Pokemon, *exceptions.Repos
 // It will return an error if something with the CSV fail.
 func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError) {
 	fileLocation := config.GetEnvVariable("FILE_LOCATION")
-	if file, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+	file, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_APPEND, 0644)
+	if err == nil {
 		w := csv.NewWriter(file)
 		record := []string{strconv.Itoa(pokemon.ID), pokemon.Name, pokemon.Ability}
 		if err := w.Write(record); err == nil {
@@ -65,7 +66,7 @@ func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, 
 	zap.S().Errorf("REPOSITORY: Error storing the record ", pokemon)
 	repositoryError := exceptions.NewErrorWrapper(
 		constants.WritingCSVFileExceptionCode,
-		errors.New("error writing csv file"),
+		err,
 		"Error storing the record",
 		http.StatusInternalServerError,
 	)
