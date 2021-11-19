@@ -18,10 +18,8 @@ var _ = Describe("Repository", func() {
 
 	BeforeSuite(func() {
 		for i := 0; i < 10; i++ {
-			var pokemon model.Pokemon
-			id, _ := faker.RandomInt(1, 10)
-			pokemon = model.Pokemon{
-				ID:      id[0],
+			pokemon := model.Pokemon{
+				ID:      i,
 				Name:    faker.Name(),
 				Ability: faker.Word(),
 			}
@@ -38,6 +36,7 @@ var _ = Describe("Repository", func() {
 				repo := repository.NewPokemonRepository(pokemons)
 				result, err := repo.FindById(id[0])
 				//Assert
+				fmt.Printf("ID generated %v", id[0])
 				Expect(result).ShouldNot(BeNil())
 				Expect(err).Should(BeNil())
 				Expect(result.ID).Should(Equal(id[0]))
@@ -67,7 +66,6 @@ var _ = Describe("Repository", func() {
 				repo := repository.NewPokemonRepository(pokemons)
 				result, err := repo.CreateOne(&poke)
 				//Assert
-				fmt.Printf("Error %v", err)
 				Expect(result).Should(BeNil())
 				Expect(err).ShouldNot(BeNil())
 				Expect(err.Code).Should(Equal(constants.WritingCSVFileExceptionCode))
@@ -85,7 +83,6 @@ var _ = Describe("Repository", func() {
 				repo := repository.NewPokemonRepository(pokemons)
 				result, err := repo.CreateOne(&poke)
 				//Assert
-				fmt.Printf("Error %v", err)
 				Expect(result).ShouldNot(BeNil())
 				Expect(err).Should(BeNil())
 				Expect(result.ID).Should(Equal(id[0]))
