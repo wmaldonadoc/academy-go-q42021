@@ -2,7 +2,9 @@ package interactor
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
@@ -10,6 +12,8 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/presenter"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/repository"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/vendors"
+	"github.com/wmaldonadoc/academy-go-q42021/workers"
+	"github.com/wmaldonadoc/academy-go-q42021/workers/pool"
 
 	"go.uber.org/zap"
 )
@@ -18,6 +22,7 @@ type pokemonInteractor struct {
 	PokemonRepository repository.PokemonRepository
 	PokemonPresenter  presenter.PokemonPresenter
 	HTTPClient        vendors.HTTPClient
+	WorkerPool        workers.Dispatcher
 }
 
 type PokemonInteractor interface {
@@ -27,11 +32,17 @@ type PokemonInteractor interface {
 	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *ucExceptions.UseCaseError)
 	// GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
 	GetPokemonByName(name string) (*model.Pokemon, *ucExceptions.UseCaseError)
+	BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string
 }
 
 // NewPokemonInteractor - Receive a repository, presenter and HTTPClient and returns a concret instance of PokemonInteractor.
-func NewPokemonInteractor(r repository.PokemonRepository, p presenter.PokemonPresenter, client vendors.HTTPClient) *pokemonInteractor {
-	return &pokemonInteractor{r, p, client}
+func NewPokemonInteractor(
+	r repository.PokemonRepository,
+	p presenter.PokemonPresenter,
+	client vendors.HTTPClient,
+	disp workers.Dispatcher,
+) *pokemonInteractor {
+	return &pokemonInteractor{r, p, client, disp}
 }
 
 // GetById - Returns a pokemon given an ID.
@@ -77,4 +88,20 @@ func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *ucE
 	}
 
 	return pi.PokemonPresenter.ResponseMappedPokemonFromAPI(resp), nil
+}
+
+func (pi *pokemonInteractor) BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string {
+	disp := pi.WorkerPool.SetPoolSize(items).Start()
+	for i := 0; i < items; i++ {
+		disp.Submit(pool.Job{
+			ID:        i,
+			Name:      fmt.Sprintf("JobID::%d", i),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		})
+	}
+	zap.S().Info("Interactor %v", disp.OutputChannel)
+	resp := <-disp.OutputChannel
+
+	return resp
 }

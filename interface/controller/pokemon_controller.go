@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/exceptions"
+	"github.com/wmaldonadoc/academy-go-q42021/interface/schemas"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 
 	"go.uber.org/zap"
@@ -27,6 +30,7 @@ type PokemonController interface {
 		If the HTTP request fails nothing will gonna be stored.
 	*/
 	GetByName(c Context)
+	BatchSearching(c Context)
 }
 
 // NewPokemonController - Receive the controller interactor and returns a concret instance of the controller.
@@ -96,4 +100,22 @@ func (pc *pokemonController) GetByName(c Context) {
 	}
 
 	c.JSON(http.StatusOK, record)
+}
+
+func (pc *pokemonController) BatchSearching(c Context) {
+	var req schemas.BatchSearchingSchema
+	if err := c.ShouldBindQuery(&req); err != nil {
+		for _, field := range err.(validator.ValidationErrors) {
+			zap.S().Debugf("CONTROLLER: Request error ", field.Error())
+			message := fmt.Sprint("Missing query string param " + field.StructField() + " condition: " + field.ActualTag())
+			requestError := exceptions.UnprocessableEntityException(message)
+			c.AbortWithStatusJSON(requestError.HTTPStatus, requestError)
+			return
+		}
+	}
+	zap.S().Infof("Request: ", req.Items)
+	zap.S().Infof("Request: ", req.ItemsPerWorker)
+	zap.S().Infof("Request: ", req.Type)
+	resp := pc.pokemonInteractor.BatchReadingPokemon(req.Type, req.Items, req.ItemsPerWorker)
+	c.JSON(http.StatusOK, resp)
 }

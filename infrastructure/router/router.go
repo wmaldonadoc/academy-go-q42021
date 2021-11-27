@@ -20,6 +20,7 @@ func NewRouter(controller controller.AppController) {
 		{
 			pokemonRoutes.GET("/:id", func(context *gin.Context) { controller.Pokemon.GetByID(context) })
 			pokemonRoutes.GET("/name/:name", func(context *gin.Context) { controller.Pokemon.GetByName(context) })
+			pokemonRoutes.GET("/", func(context *gin.Context) { controller.Pokemon.BatchSearching(context) })
 		}
 
 		healthRoutes := mainGroup.Group("/health")

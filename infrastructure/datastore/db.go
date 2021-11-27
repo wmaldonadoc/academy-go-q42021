@@ -44,6 +44,19 @@ func openFile() [][]string {
 	return chunks
 }
 
+// OpenFileConcurrently - Open a CSV file given an env var, and return the reader.
+func OpenFileConcurrently() *csv.Reader {
+	fileLocation := config.GetEnvVariable("FILE_LOCATION")
+	csvfile, err := os.Open(fileLocation)
+	if err != nil {
+		zap.S().Errorf("Error reading the CSV file concurrently %s", err)
+		log.Fatal(err)
+	}
+	// defer csvfile.Close()
+	reader := csv.NewReader(csvfile)
+	return reader
+}
+
 // NewCSV - Open and reads a CSV file and return it as a slice of pokemons.
 func NewCSV() []*model.Pokemon {
 	pokemones := []*model.Pokemon{}

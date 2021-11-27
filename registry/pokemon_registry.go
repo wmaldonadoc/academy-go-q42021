@@ -8,6 +8,7 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 	up "github.com/wmaldonadoc/academy-go-q42021/usecase/presenter"
 	ur "github.com/wmaldonadoc/academy-go-q42021/usecase/repository"
+	"github.com/wmaldonadoc/academy-go-q42021/workers"
 )
 
 // NewPokemonController - Creates and returns an instance of controller.
@@ -18,7 +19,12 @@ func (r *registry) NewPokemonController() controller.PokemonController {
 // NewPokemonInteractor - Creates an instance of interactor.
 // Also inject the following dependencies: Repository, Presenter & HTTPClient.
 func (r *registry) NewPokemonInteractor() interactor.PokemonInteractor {
-	return interactor.NewPokemonInteractor(r.NewPokemonRepository(), r.NewPokemonPresenter(), api.NewApiClient())
+	return interactor.NewPokemonInteractor(
+		r.NewPokemonRepository(),
+		r.NewPokemonPresenter(),
+		api.NewApiClient(),
+		workers.NewDispatcher(),
+	)
 }
 
 // NewPokemonRepository - Creates and returns an instance of repository.
