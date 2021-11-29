@@ -33,7 +33,10 @@ func main() {
 	}()
 	logger := loggerMgr.Sugar()
 
-	db := datastore.NewCSV()
+	db, err := datastore.NewCSV()
+	if err != nil {
+		zap.S().Error("Error bootstraping CSV file")
+	}
 	r := registry.NewRegistry(db)
 
 	logger.Debug("Booting routes...")

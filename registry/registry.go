@@ -14,7 +14,7 @@ type Registry interface {
 	NewAppController() controller.AppController
 }
 
-// Newregistry - Receives a slice of pokemons and return a concret instance of registry.
+// Newregistry - Receives a slice of pokemons and return a conrete instance of registry.
 func NewRegistry(db []*model.Pokemon) *registry {
 	return &registry{db}
 }

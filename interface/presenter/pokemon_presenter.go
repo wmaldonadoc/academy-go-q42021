@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/api"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/vendors"
@@ -20,7 +21,7 @@ type PokemonPresenter interface {
 	ResponseMappedPokemonFromAPI(p *api.APIResponse) *model.Pokemon
 }
 
-// NewPokemonPresenter - Create and returns a concret instance of pokemonPresenter.
+// NewPokemonPresenter - Create and returns a conrete instance of pokemonPresenter.
 func NewPokemonPresenter() *pokemonPresenter {
 	return &pokemonPresenter{}
 }
@@ -35,8 +36,8 @@ func (pp *pokemonPresenter) ResponsePokemon(p *model.Pokemon) *model.Pokemon {
 func (pp *pokemonPresenter) ResponseMappedPokemonFromAPI(p *api.APIResponse) *model.Pokemon {
 	// Generating random id
 	rand.Seed(time.Now().UnixNano())
-	max := 1000
-	min := 10
+	max := constants.MAXIDALLOWED
+	min := constants.MINIDALLOWED
 	id := rand.Intn(max-min+1) + min
 	zap.S().Info("PRESENTER: ID generate: ", id)
 	// mapping & deserialize JSON

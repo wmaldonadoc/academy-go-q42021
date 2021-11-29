@@ -10,15 +10,18 @@ import (
 
 	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 
 	"go.uber.org/zap"
 )
 
-func openFile() [][]string {
+func openFile() ([][]string, *pokerrors.DefaultError) {
 	fileLocation := config.GetEnvVariable("FILE_LOCATION")
 	file, err := os.Open(fileLocation)
 	if err != nil {
 		zap.S().Errorf("Error opening the CSV file %s", err)
+		conError := pokerrors.GenerateDefaultError(err.Error())
+		return nil, &conError
 	}
 	zap.S().Info("Successfully openned csv file")
 
@@ -27,21 +30,24 @@ func openFile() [][]string {
 	row1, err := bufio.NewReader(file).ReadSlice('\n')
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
-		log.Fatal(err)
+		conError := pokerrors.GenerateDefaultError(err.Error())
+		return nil, &conError
 	}
 	_, err = file.Seek(int64(len(row1)), io.SeekStart)
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
-		log.Fatal(err)
+		conError := pokerrors.GenerateDefaultError(err.Error())
+		return nil, &conError
 	}
 
 	chunks, err := csv.NewReader(file).ReadAll()
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
-		log.Fatal(err)
+		conError := pokerrors.GenerateDefaultError(err.Error())
+		return nil, &conError
 	}
 
-	return chunks
+	return chunks, nil
 }
 
 // OpenFileConcurrently - Open a CSV file given an env var, and return the reader.
@@ -66,25 +72,28 @@ func generatePokemonsFromCSV(id int, data []string) *model.Pokemon {
 }
 
 // NewCSV - Open and reads a CSV file and return it as a slice of pokemons.
-func NewCSV() []*model.Pokemon {
+func NewCSV() ([]*model.Pokemon, *pokerrors.DefaultError) {
 	pokemones := []*model.Pokemon{}
-	chunks := openFile()
+	chunks, err := openFile()
+	if err != nil {
+		zap.S().Error("Error with datastore connection", err)
+	}
 	zap.S().Debug("-------- START READING CSV --------")
 	for _, line := range chunks {
-		if id, err := strconv.Atoi(line[0]); err == nil {
-
-			zap.S().Debugf("ID %s", line[0])
-			zap.S().Debugf("Name %s", line[1])
-			zap.S().Debugf("Ability %s", line[2])
-			pokemon := generatePokemonsFromCSV(id, line)
-			pokemones = append(pokemones, pokemon)
-		} else {
+		id, err := strconv.Atoi(line[0])
+		if err != nil {
 			zap.S().Error("Error parsing integer -> string")
-			log.Fatal(err)
+			connError := pokerrors.GenerateDefaultError("Error reading CSV")
+			return nil, &connError
 		}
+		zap.S().Debugf("ID %s", line[0])
+		zap.S().Debugf("Name %s", line[1])
+		zap.S().Debugf("Ability %s", line[2])
+		pokemon := generatePokemonsFromCSV(id, line)
+		pokemones = append(pokemones, pokemon)
 	}
 	zap.S().Debug("-------- END READING CSV --------")
 	zap.S().Debugf("Pokemons availables: %s", pokemones)
 
-	return pokemones
+	return pokemones, nil
 }

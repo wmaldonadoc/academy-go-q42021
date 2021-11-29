@@ -18,24 +18,26 @@ type pokemonRepository struct {
 
 // PokemonRepository - Holds the abstraction of the repository methods.
 type PokemonRepository interface {
-	FindById(id int) (*model.Pokemon, *pokerrors.RepositoryError)
+	FindByID(id int) (*model.Pokemon, *pokerrors.RepositoryError)
 	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.RepositoryError)
 }
 
-// NewPokemonRepository - Receive a slice of pokemons and return a concrete instance od pokemonRepository.
+// NewPokemonRepository - Receive a slice of pokemons and return a conretee instance od pokemonRepository.
 func NewPokemonRepository(db []*model.Pokemon) *pokemonRepository {
 	return &pokemonRepository{db}
 }
 
-// FindById - Find and return a pokemon given an ID.
+// FindByID - Find and return a pokemon given an ID.
 // It will return a error if the pokemon doesn't exists.
-func (pr *pokemonRepository) FindById(id int) (*model.Pokemon, *pokerrors.RepositoryError) {
+func (pr *pokemonRepository) FindByID(id int) (*model.Pokemon, *pokerrors.RepositoryError) {
 	for _, poke := range pr.db {
 		if poke.ID == id {
 			return poke, nil
 		}
 	}
+
 	repositoryError := pokerrors.GenerateNotFoundError("Pokemon not found")
+
 	return nil, &repositoryError
 }
 
@@ -52,10 +54,12 @@ func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, 
 			pr.db = append(pr.db, pokemon)
 			zap.S().Info("REPOSITORY: Pokemon stored successfully")
 			zap.S().Infof("REPOSITORY: Pokemons array updated %s", pr.db)
+
 			return pokemon, nil
 		}
 	}
 	zap.S().Errorf("REPOSITORY: Error storing the record ", pokemon)
 	repositoryError := pokerrors.GenerateRepositoryError("Error storing the record")
+
 	return nil, &repositoryError
 }

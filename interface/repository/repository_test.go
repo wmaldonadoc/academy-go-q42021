@@ -34,7 +34,7 @@ var _ = Describe("Repository", func() {
 				id, _ := faker.RandomInt(1, 10)
 				//Act
 				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.FindById(id[0])
+				result, err := repo.FindByID(id[0])
 				//Assert
 				fmt.Printf("ID generated %v", id[0])
 				Expect(result).ShouldNot(BeNil())
@@ -46,7 +46,7 @@ var _ = Describe("Repository", func() {
 				id, _ := faker.RandomInt(11, 20)
 				//Act
 				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.FindById(id[0])
+				result, err := repo.FindByID(id[0])
 				//Assert
 				Expect(result).Should(BeNil())
 				Expect(err).ShouldNot(BeNil())

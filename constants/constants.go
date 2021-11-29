@@ -1,5 +1,6 @@
 package constants
 
+// Error codes
 const (
 	// NotFoundExceptionCode constant represents a custom error code for a not found record represented by 1000
 	NotFoundExceptionCode = 1000
@@ -15,4 +16,10 @@ const (
 
 	// WritingCSVFileExceptionCode constant represents a custom error code for a CSV writting error represented by 1003
 	DefaultExceptionCode = 1004
+)
+
+// Config codes
+const (
+	MAXIDALLOWED = 1000
+	MINIDALLOWED = 10
 )

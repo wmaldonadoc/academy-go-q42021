@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/schemas"
@@ -30,7 +29,7 @@ type PokemonController interface {
 	BatchSearching(c Context)
 }
 
-// NewPokemonController - Receive the controller interactor and returns a concret instance of the controller.
+// NewPokemonController - Receive the controller interactor and returns a conrete instance of the controller.
 func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 	return &pokemonController{pi}
 }
@@ -38,35 +37,41 @@ func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 // GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
 // It will return an error as HTTP response if something goes wrong.
 func (pc *pokemonController) GetByID(c Context) {
-	requestId := c.Param("id")
-	if pokemonId, err := strconv.Atoi(requestId); err == nil {
-		p, err := pc.pokemonInteractor.GetByID(pokemonId)
-		if err != nil {
-			zap.S().Errorf("CONTROLLER: Error searching pokemon by id %s", err)
-			genericException := pokerrors.GenerateNotFoundError("Error searching pokemon by id")
-			c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
-
-			return
-		}
-		c.JSON(http.StatusOK, p)
-	} else {
-		zap.S().Errorf("CONTROLLER: The id should be a integer %s", requestId)
+	var req schemas.GetPokemonById
+	if err := c.BindUri(&req); err != nil {
+		zap.S().Errorf("CONTROLLER: The id should be a integer %s", err)
 		parseError := pokerrors.GenerateUnprocessableEntityError("The id should be a integer")
-		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, parseError)
+		c.AbortWithStatusJSON(parseError.HTTPStatus, parseError)
 
 		return
 	}
+	p, err := pc.pokemonInteractor.GetByID(req.ID)
+	if err != nil {
+		zap.S().Errorf("CONTROLLER: Error searching pokemon by id %s", err)
+		genericException := pokerrors.GenerateNotFoundError("Error searching pokemon by id")
+		c.AbortWithStatusJSON(genericException.HTTPStatus, &genericException)
+
+		return
+	}
+	c.JSON(http.StatusOK, p)
 }
 
 // GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
 // It will return an error as HTTP response if something goes wrong.
 // If the HTTP request fails nothing will gonna be stored.
 func (pc *pokemonController) GetByName(c Context) {
-	pokemonName := c.Param("name")
-	response, err := pc.pokemonInteractor.GetPokemonByName(pokemonName)
+	var req schemas.GetPokemonByName
+	if err := c.BindUri(&req); err != nil {
+		zap.S().Errorf("CONTROLLER: The name its mandatory %s", err)
+		parseError := pokerrors.GenerateUnprocessableEntityError("The name its mandatory")
+		c.AbortWithStatusJSON(parseError.HTTPStatus, parseError)
+
+		return
+	}
+	response, err := pc.pokemonInteractor.GetPokemonByName(req.Name)
 	if err != nil {
-		zap.S().Errorf("CONTROLLER: Error getting pokemon %s", pokemonName)
-		genericException := pokerrors.GenerateDefaultError("Error getting pokemon " + pokemonName)
+		zap.S().Errorf("CONTROLLER: Error getting pokemon %s", req.Name)
+		genericException := pokerrors.GenerateDefaultError("Error getting pokemon " + req.Name)
 		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
 
 		return
@@ -74,7 +79,7 @@ func (pc *pokemonController) GetByName(c Context) {
 	record, repositoryError := pc.pokemonInteractor.CreateOne(response)
 	if repositoryError != nil {
 		zap.S().Error("CONTROLLER: Error storing pokemon")
-		genericException := pokerrors.GenerateDefaultError("Error storing pokemon " + pokemonName)
+		genericException := pokerrors.GenerateDefaultError("Error storing pokemon " + req.Name)
 		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
 
 		return

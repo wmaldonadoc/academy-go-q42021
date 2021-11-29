@@ -33,7 +33,7 @@ type PokemonInteractor interface {
 	BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string
 }
 
-// NewPokemonInteractor - Receive a repository, presenter and HTTPClient and returns a concret instance of PokemonInteractor.
+// NewPokemonInteractor - Receive a repository, presenter and HTTPClient and returns a conrete instance of PokemonInteractor.
 func NewPokemonInteractor(
 	r repository.PokemonRepository,
 	p presenter.PokemonPresenter,
@@ -45,10 +45,11 @@ func NewPokemonInteractor(
 
 // GetById - Returns a pokemon given an ID.
 func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *pokerrors.UseCaseError) {
-	p, err := pi.PokemonRepository.FindById(id)
+	p, err := pi.PokemonRepository.FindByID(id)
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error getting pokemon %s", err.Err)
 		useCaseException := pokerrors.GenerateUseCaseError("Error getting pokemon")
+
 		return nil, &useCaseException
 	}
 
@@ -69,14 +70,18 @@ func (pi *pokemonInteractor) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, 
 // GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
 func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError) {
 	resp, err := pi.HTTPClient.Get("https://pokeapi.co/api/v2/pokemon/" + name)
+
 	if resp.HTTPStatus != http.StatusOK {
 		zap.S().Errorf("INTEREACTOR: Third part API response with an error status: ", resp.HTTPStatus)
 		useCaseException := pokerrors.GenerateUseCaseError("Request error")
+
 		return nil, &useCaseException
 	}
+
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error making request %s", err)
 		useCaseException := pokerrors.GenerateUseCaseError("Error making request")
+
 		return nil, &useCaseException
 	}
 

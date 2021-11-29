@@ -9,4 +9,5 @@ type Context interface {
 	AbortWithStatusJSON(code int, i interface{})
 	AbortWithStatus(code int)
 	ShouldBindQuery(obj interface{}) error
+	BindUri(obj interface{}) error
 }
