@@ -2,13 +2,21 @@ package pool
 
 import (
 	"io"
+	"strconv"
 	"time"
 
+	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 
 	"go.uber.org/zap"
 )
 
+// Job - Represent a job to dispatch. Have the fields:
+// ID - Job unique ID
+// Name - Job unique name
+// CreateAt
+// UpdatedAt
 type Job struct {
 	ID        int
 	Name      string
@@ -16,11 +24,19 @@ type Job struct {
 	UpdatedAt time.Time
 }
 
+// JobChannel - A channel fot Jobs
 type JobChannel chan Job
+
+// JobQueue - Shared JobPool between the workers
 type JobQueue chan chan Job
-type PokemonChan chan [][]string
+
+// PokemonChan - Results output chan
+type PokemonChan chan []*model.Pokemon
+
+// End - Workers finished flag's channel
 type End chan bool
 
+// Worker
 type Worker struct {
 	ID            int
 	JobChan       JobChannel
@@ -66,6 +82,23 @@ func (wr *Worker) Stop() {
 	wr.End <- true
 }
 
+func parsePokemon(data [][]string) ([]*model.Pokemon, *pokerrors.DefaultError) {
+	var pokemons []*model.Pokemon
+	for _, line := range data {
+		id, err := strconv.Atoi(line[0])
+		if err != nil {
+			zap.S().Error("Error parsing integer -> string")
+			connError := pokerrors.GenerateDefaultError("Error reading CSV")
+
+			return nil, &connError
+		}
+		pokemon := datastore.GeneratePokemonsFromCSV(id, line)
+		pokemons = append(pokemons, pokemon)
+	}
+
+	return pokemons, nil
+}
+
 func (wr *Worker) readPokemons(itemsPerWorker int) {
 	var result [][]string
 	reader := datastore.OpenFileConcurrently()
@@ -83,7 +116,11 @@ func (wr *Worker) readPokemons(itemsPerWorker int) {
 		zap.S().Infof("Pokemon worker: ", record)
 		result = append(result, record)
 	}
-	wr.OutputChannel <- result[1:] // Skip header line
+	pokemon, err := parsePokemon(result[1:])
+	if err != nil {
+		zap.S().Error("Error parsing pokemons", err)
+	}
+	wr.OutputChannel <- pokemon
 	zap.S().Infof("Slice length", len(result))
 	zap.S().Infof("Slice content", result)
 }

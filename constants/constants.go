@@ -20,6 +20,8 @@ const (
 
 // Config codes
 const (
+	// MAXIDALLOWED constant represents the maximum threshold of ID seed to generated
 	MAXIDALLOWED = 1000
+	// MINIDALLOWED constant represents the maximum threshold of ID seed to generated
 	MINIDALLOWED = 10
 )

@@ -30,7 +30,8 @@ type PokemonInteractor interface {
 	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.UseCaseError)
 	// GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
 	GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError)
-	BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string
+	// BatchFilter - Create the worker pool and dispatch the jobs to recover the items from CSV.
+	BatchFilter(disc string, items int, itemsPerworker int) []*model.Pokemon
 }
 
 // NewPokemonInteractor - Receive a repository, presenter and HTTPClient and returns a conrete instance of PokemonInteractor.
@@ -88,7 +89,8 @@ func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pok
 	return pi.PokemonPresenter.ResponseMappedPokemonFromAPI(resp), nil
 }
 
-func (pi *pokemonInteractor) BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string {
+// BatchFilter - Create the worker pool and dispatch the jobs to recover the items from CSV.
+func (pi *pokemonInteractor) BatchFilter(disc string, items int, itemsPerworker int) []*model.Pokemon {
 	disp := pi.WorkerPool.SetPoolSize(items, itemsPerworker).Start()
 	for i := 0; i < items; i++ {
 		disp.Submit(pool.Job{

@@ -26,7 +26,9 @@ type PokemonController interface {
 	// It will return an error as HTTP response if something goes wrong.
 	// If the HTTP request fails nothing will gonna be stored.
 	GetByName(c Context)
-	BatchSearching(c Context)
+	// FilterSearching - Reads the CSV file using a worker pool and return the requested items.
+	// It will return an error as HTTP response if something goes wrong.
+	FilterSearching(c Context)
 }
 
 // NewPokemonController - Receive the controller interactor and returns a conrete instance of the controller.
@@ -88,7 +90,9 @@ func (pc *pokemonController) GetByName(c Context) {
 	c.JSON(http.StatusOK, record)
 }
 
-func (pc *pokemonController) BatchSearching(c Context) {
+// FilterSearching - Reads the CSV file using a worker pool and return the requested items.
+// It will return an error as HTTP response if something goes wrong.
+func (pc *pokemonController) FilterSearching(c Context) {
 	var req schemas.BatchSearchingSchema
 	if err := c.ShouldBindQuery(&req); err != nil {
 		for _, field := range err.(validator.ValidationErrors) {
@@ -102,6 +106,6 @@ func (pc *pokemonController) BatchSearching(c Context) {
 	zap.S().Infof("Request: ", req.Items)
 	zap.S().Infof("Request: ", req.ItemsPerWorker)
 	zap.S().Infof("Request: ", req.Type)
-	resp := pc.pokemonInteractor.BatchReadingPokemon(req.Type, req.Items, req.ItemsPerWorker)
+	resp := pc.pokemonInteractor.BatchFilter(req.Type, req.Items, req.ItemsPerWorker)
 	c.JSON(http.StatusOK, resp)
 }

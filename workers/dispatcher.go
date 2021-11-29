@@ -9,22 +9,27 @@ import (
 )
 
 type Dispatcher interface {
+	// Create the worker pool and and return a Dispatch with the channels to handle the jobs.
+	// The number of workers are calculated given ⌈ITEMS / ITEMSPERWORKER⌉
 	SetPoolSize(num int, itemsPerWorker int) *Disp
+	// Start - creates pool of num count of workers.
+	// Also dispatch the worker's jobs.
 	Start() *Disp
+	// Submit - Receive a job and add to WorkChan's queue.
 	Submit(job worker.Job)
 }
 
-// disp is the link between the client and the workers
+// Disp is the link between the client and the workers
 type Disp struct {
-	Workers       []*worker.Worker  // this is the list of workers that dispatcher tracks
-	WorkChan      worker.JobChannel // client submits job to this channel
-	Queue         worker.JobQueue   // this is the shared JobPool between the workers
+	Workers       []*worker.Worker  // The list of workers that dispatcher tracks
+	WorkChan      worker.JobChannel // Client submits job to this channel
+	Queue         worker.JobQueue   // Shared JobPool between the workers
 	OutputChannel worker.PokemonChan
 	ItemsLimit    int
 	End           chan bool
 }
 
-// New returns a new dispatcher. A Dispatcher communicates between the client
+//  NewDispatcher - New returns a new dispatcher. A Dispatcher communicates between the client
 // and the worker. Its main job is to receive a job and share it on the WorkPool
 // WorkPool is the link between the dispatcher and all the workers as
 // the WorkPool of the dispatcher is common JobPool for all the workers
@@ -32,6 +37,8 @@ func NewDispatcher() *Disp {
 	return &Disp{}
 }
 
+// SetPoolSize - Create the worker pool and and return a Dispatch with the channels to handle the jobs.
+// The number of workers are calculated given ⌈ITEMS / ITEMSPERWORKER⌉
 func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
 	poolSize := int(math.Ceil(float64(size) / float64(itemsPerWorker)))
 	zap.S().Debug("Pool size obtained: ", poolSize)
@@ -45,7 +52,8 @@ func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
 	}
 }
 
-// Start creates pool of num count of workers.
+// Start - creates pool of num count of workers.
+// Also dispatch the worker's jobs.
 func (d *Disp) Start() *Disp {
 	zap.S().Infof("Dispatcher build %v", d)
 	l := len(d.Workers)
@@ -66,7 +74,7 @@ func (d *Disp) Start() *Disp {
 	return d
 }
 
-// process listens to a job submitted on WorkChan and
+// process -  listens to a job submitted on WorkChan and
 // relays it to the WorkPool. The WorkPool is shared between
 // the workers.
 func (d *Disp) process() {
@@ -83,6 +91,7 @@ func (d *Disp) process() {
 	}
 }
 
+// Submit - Receive a job and add to WorkChan's queue.
 func (d *Disp) Submit(job worker.Job) {
 	d.WorkChan <- job
 }

@@ -63,7 +63,8 @@ func OpenFileConcurrently() *csv.Reader {
 	return reader
 }
 
-func generatePokemonsFromCSV(id int, data []string) *model.Pokemon {
+// GeneratePokemonsFromCSV - Receive the id of pokemon and return a instance of Pokemon model.
+func GeneratePokemonsFromCSV(id int, data []string) *model.Pokemon {
 	return &model.Pokemon{
 		ID:      id,
 		Name:    data[1],
@@ -84,12 +85,13 @@ func NewCSV() ([]*model.Pokemon, *pokerrors.DefaultError) {
 		if err != nil {
 			zap.S().Error("Error parsing integer -> string")
 			connError := pokerrors.GenerateDefaultError("Error reading CSV")
+
 			return nil, &connError
 		}
 		zap.S().Debugf("ID %s", line[0])
 		zap.S().Debugf("Name %s", line[1])
 		zap.S().Debugf("Ability %s", line[2])
-		pokemon := generatePokemonsFromCSV(id, line)
+		pokemon := GeneratePokemonsFromCSV(id, line)
 		pokemones = append(pokemones, pokemon)
 	}
 	zap.S().Debug("-------- END READING CSV --------")
