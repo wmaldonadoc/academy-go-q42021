@@ -1,14 +1,12 @@
 package interactor
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
-	ucExceptions "github.com/wmaldonadoc/academy-go-q42021/usecase/exceptions"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/presenter"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/repository"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/vendors"
@@ -27,11 +25,11 @@ type pokemonInteractor struct {
 
 type PokemonInteractor interface {
 	// GetById - Returns a pokemon given an ID.
-	GetByID(id int) (*model.Pokemon, *ucExceptions.UseCaseError)
+	GetByID(id int) (*model.Pokemon, *pokerrors.UseCaseError)
 	// CreateOne - Append the new pokemon row to CSV file
-	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *ucExceptions.UseCaseError)
+	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.UseCaseError)
 	// GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
-	GetPokemonByName(name string) (*model.Pokemon, *ucExceptions.UseCaseError)
+	GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError)
 	BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string
 }
 
@@ -46,11 +44,11 @@ func NewPokemonInteractor(
 }
 
 // GetById - Returns a pokemon given an ID.
-func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *ucExceptions.UseCaseError) {
+func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *pokerrors.UseCaseError) {
 	p, err := pi.PokemonRepository.FindById(id)
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error getting pokemon %s", err.Err)
-		useCaseException := ucExceptions.NewErrorWrapper(err.Code, err.HTTPStatus, err.Err, err.Message)
+		useCaseException := pokerrors.GenerateUseCaseError("Error getting pokemon")
 		return nil, &useCaseException
 	}
 
@@ -58,32 +56,27 @@ func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *ucExceptions.UseC
 }
 
 // CreateOne - Append the new pokemon row to CSV file.
-func (pi *pokemonInteractor) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *ucExceptions.UseCaseError) {
+func (pi *pokemonInteractor) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.UseCaseError) {
 	p, err := pi.PokemonRepository.CreateOne(pokemon)
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error storing pokemon record %s", err)
-		useCaseException := ucExceptions.NewErrorWrapper(err.Code, err.HTTPStatus, err.Err, err.Message)
+		useCaseException := pokerrors.GenerateUseCaseError("Error storing pokemon record")
 		return nil, &useCaseException
 	}
 	return pi.PokemonPresenter.ResponsePokemon(p), nil
 }
 
 // GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
-func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *ucExceptions.UseCaseError) {
+func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError) {
 	resp, err := pi.HTTPClient.Get("https://pokeapi.co/api/v2/pokemon/" + name)
 	if resp.HTTPStatus != http.StatusOK {
 		zap.S().Errorf("INTEREACTOR: Third part API response with an error status: ", resp.HTTPStatus)
-		useCaseException := ucExceptions.NewErrorWrapper(
-			constants.ThirdPartAPIExceptionCode,
-			resp.HTTPStatus,
-			errors.New("request error"),
-			resp.Body,
-		)
+		useCaseException := pokerrors.GenerateUseCaseError("Request error")
 		return nil, &useCaseException
 	}
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error making request %s", err)
-		useCaseException := ucExceptions.NewErrorWrapper(err.Code, err.HTTPStatus, err.Err, err.Message)
+		useCaseException := pokerrors.GenerateUseCaseError("Error making request")
 		return nil, &useCaseException
 	}
 

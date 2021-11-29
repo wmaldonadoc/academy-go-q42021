@@ -2,15 +2,12 @@ package repository
 
 import (
 	"encoding/csv"
-	"errors"
-	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/wmaldonadoc/academy-go-q42021/config"
-	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
-	"github.com/wmaldonadoc/academy-go-q42021/interface/exceptions"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 
 	"go.uber.org/zap"
 )
@@ -21,8 +18,8 @@ type pokemonRepository struct {
 
 // PokemonRepository - Holds the abstraction of the repository methods.
 type PokemonRepository interface {
-	FindById(id int) (*model.Pokemon, *exceptions.RepositoryError)
-	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError)
+	FindById(id int) (*model.Pokemon, *pokerrors.RepositoryError)
+	CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.RepositoryError)
 }
 
 // NewPokemonRepository - Receive a slice of pokemons and return a concrete instance od pokemonRepository.
@@ -32,24 +29,19 @@ func NewPokemonRepository(db []*model.Pokemon) *pokemonRepository {
 
 // FindById - Find and return a pokemon given an ID.
 // It will return a error if the pokemon doesn't exists.
-func (pr *pokemonRepository) FindById(id int) (*model.Pokemon, *exceptions.RepositoryError) {
+func (pr *pokemonRepository) FindById(id int) (*model.Pokemon, *pokerrors.RepositoryError) {
 	for _, poke := range pr.db {
 		if poke.ID == id {
 			return poke, nil
 		}
 	}
-	repositoryError := exceptions.NewErrorWrapper(
-		constants.NotFoundExceptionCode,
-		errors.New("pokemon not found"),
-		"Pokemon not found",
-		http.StatusNotFound,
-	)
+	repositoryError := pokerrors.GenerateNotFoundError("Pokemon not found")
 	return nil, &repositoryError
 }
 
 // CreateOne - Append a new row in the CSV file.
 // It will return an error if something with the CSV fail.
-func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *exceptions.RepositoryError) {
+func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.RepositoryError) {
 	fileLocation := config.GetEnvVariable("FILE_LOCATION")
 	file, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
@@ -64,11 +56,6 @@ func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, 
 		}
 	}
 	zap.S().Errorf("REPOSITORY: Error storing the record ", pokemon)
-	repositoryError := exceptions.NewErrorWrapper(
-		constants.WritingCSVFileExceptionCode,
-		err,
-		"Error storing the record",
-		http.StatusInternalServerError,
-	)
+	repositoryError := pokerrors.GenerateRepositoryError("Error storing the record")
 	return nil, &repositoryError
 }

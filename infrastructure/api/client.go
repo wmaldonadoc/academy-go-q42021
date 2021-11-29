@@ -1,11 +1,9 @@
 package api
 
 import (
-	"errors"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 
 	"go.uber.org/zap"
@@ -31,24 +29,13 @@ func (a *APIResponse) Get(url string) (*APIResponse, *pokerrors.APIClientError) 
 	resp, err := http.Get(url)
 	if err != nil {
 		zap.S().Error("Error to request GET to " + url)
-		requestError := pokerrors.APIClientError{
-			Message:    "Error requesting third part API.",
-			HTTPStatus: http.StatusBadRequest,
-			Code:       constants.ThirdPartAPIExceptionCode,
-			Err:        errors.New("error requesting third part API"),
-		}
-
+		requestError := pokerrors.GenerateAPIError("Error requesting third part API")
 		return nil, &requestError
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		readingError := pokerrors.APIClientError{
-			Message:    "Error reading response body.",
-			HTTPStatus: http.StatusBadRequest,
-			Code:       constants.ThirdPartAPIExceptionCode,
-			Err:        errors.New("error reading response body"),
-		}
+		readingError := pokerrors.GenerateAPIError("Error reading response body")
 		zap.S().Errorf("Error reading response body %s", readingError)
 		return nil, &readingError
 	}

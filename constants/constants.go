@@ -12,4 +12,7 @@ const (
 
 	// WritingCSVFileExceptionCode constant represents a custom error code for a CSV writting error represented by 1003
 	WritingCSVFileExceptionCode = 1003
+
+	// WritingCSVFileExceptionCode constant represents a custom error code for a CSV writting error represented by 1003
+	DefaultExceptionCode = 1004
 )

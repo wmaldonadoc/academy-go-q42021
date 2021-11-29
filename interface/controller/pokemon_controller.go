@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/wmaldonadoc/academy-go-q42021/interface/exceptions"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/schemas"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 
 	"go.uber.org/zap"
@@ -43,11 +43,7 @@ func (pc *pokemonController) GetByID(c Context) {
 		p, err := pc.pokemonInteractor.GetByID(pokemonId)
 		if err != nil {
 			zap.S().Errorf("CONTROLLER: Error searching pokemon by id %s", err)
-			genericException := exceptions.GenericException(
-				err.Message,
-				err.HTTPStatus,
-				err.Code,
-			)
+			genericException := pokerrors.GenerateNotFoundError("Error searching pokemon by id")
 			c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
 
 			return
@@ -55,7 +51,7 @@ func (pc *pokemonController) GetByID(c Context) {
 		c.JSON(http.StatusOK, p)
 	} else {
 		zap.S().Errorf("CONTROLLER: The id should be a integer %s", requestId)
-		parseError := exceptions.UnprocessableEntityException("The id should be a integer")
+		parseError := pokerrors.GenerateUnprocessableEntityError("The id should be a integer")
 		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, parseError)
 
 		return
@@ -70,11 +66,7 @@ func (pc *pokemonController) GetByName(c Context) {
 	response, err := pc.pokemonInteractor.GetPokemonByName(pokemonName)
 	if err != nil {
 		zap.S().Errorf("CONTROLLER: Error getting pokemon %s", pokemonName)
-		genericException := exceptions.GenericException(
-			err.Message,
-			err.HTTPStatus,
-			err.Code,
-		)
+		genericException := pokerrors.GenerateDefaultError("Error getting pokemon " + pokemonName)
 		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
 
 		return
@@ -82,11 +74,7 @@ func (pc *pokemonController) GetByName(c Context) {
 	record, repositoryError := pc.pokemonInteractor.CreateOne(response)
 	if repositoryError != nil {
 		zap.S().Error("CONTROLLER: Error storing pokemon")
-		genericException := exceptions.GenericException(
-			repositoryError.Message,
-			repositoryError.HTTPStatus,
-			repositoryError.Code,
-		)
+		genericException := pokerrors.GenerateDefaultError("Error storing pokemon " + pokemonName)
 		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
 
 		return
@@ -101,7 +89,7 @@ func (pc *pokemonController) BatchSearching(c Context) {
 		for _, field := range err.(validator.ValidationErrors) {
 			zap.S().Debugf("CONTROLLER: Request error ", field.Error())
 			message := fmt.Sprint("Missing query string param " + field.StructField() + " condition: " + field.ActualTag())
-			requestError := exceptions.UnprocessableEntityException(message)
+			requestError := pokerrors.GenerateUnprocessableEntityError(message)
 			c.AbortWithStatusJSON(requestError.HTTPStatus, requestError)
 			return
 		}

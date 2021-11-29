@@ -57,6 +57,14 @@ func OpenFileConcurrently() *csv.Reader {
 	return reader
 }
 
+func generatePokemonsFromCSV(id int, data []string) *model.Pokemon {
+	return &model.Pokemon{
+		ID:      id,
+		Name:    data[1],
+		Ability: data[2],
+	}
+}
+
 // NewCSV - Open and reads a CSV file and return it as a slice of pokemons.
 func NewCSV() []*model.Pokemon {
 	pokemones := []*model.Pokemon{}
@@ -68,12 +76,8 @@ func NewCSV() []*model.Pokemon {
 			zap.S().Debugf("ID %s", line[0])
 			zap.S().Debugf("Name %s", line[1])
 			zap.S().Debugf("Ability %s", line[2])
-			pokemon := model.Pokemon{
-				ID:      id,
-				Name:    line[1],
-				Ability: line[2],
-			}
-			pokemones = append(pokemones, &pokemon)
+			pokemon := generatePokemonsFromCSV(id, line)
+			pokemones = append(pokemones, pokemon)
 		} else {
 			zap.S().Error("Error parsing integer -> string")
 			log.Fatal(err)
