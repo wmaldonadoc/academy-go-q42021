@@ -1,12 +1,10 @@
 package exceptions
 
-/*
-	RepositoryError - Represents exceptions with the following fields:
-	- Message
-	- HTTPStatus
-	- Code: Represents a custom error code
-	- Err: An Error from errors package
-*/
+//	RepositoryError - Represents exceptions with the following fields:
+//	- Message
+//	- HTTPStatus
+//	- Code: Represents a custom error code
+//	- Err: An Error from errors package
 type RepositoryError struct {
 	Message    string `json:"message"`
 	HTTPStatus int    `json:"httpStatus"`

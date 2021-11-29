@@ -31,7 +31,7 @@ type Worker struct {
 	End           End
 }
 
-func NewPokemonWorker(ID int, JobChan JobChannel, Queue JobQueue, Quit chan struct{}, itemsPerWorker int, out PokemonChan) *Worker {
+func NewPokemonWorker(ID int, JobChan JobChannel, Queue JobQueue, Quit chan struct{}, itemsPerWorker int, out PokemonChan, end chan bool) *Worker {
 	return &Worker{
 		ID:            ID,
 		JobChan:       JobChan,
@@ -39,7 +39,7 @@ func NewPokemonWorker(ID int, JobChan JobChannel, Queue JobQueue, Quit chan stru
 		Quit:          Quit,
 		ItemsLimit:    itemsPerWorker,
 		OutputChannel: out,
-		End:           make(chan bool),
+		End:           end,
 	}
 }
 
@@ -54,8 +54,8 @@ func (wr *Worker) Start() {
 			case <-wr.Quit:
 				close(wr.JobChan)
 				return
-			case <-wr.End:
-				zap.S().Infof("Shutting down worker")
+			case end := <-wr.End:
+				zap.S().Infof("Shutting down worker", end)
 				return
 			}
 		}
@@ -69,10 +69,13 @@ func (wr *Worker) Stop() {
 func (wr *Worker) readPokemons(itemsPerWorker int) {
 	var result [][]string
 	reader := datastore.OpenFileConcurrently()
+	zap.S().Debugf("Worker ID [%d] working...", wr.ID)
+	itemsPerWorker += 1 // Support the header skipping
 	for i := 0; i < itemsPerWorker; i++ {
 		record, err := reader.Read()
 		if err == io.EOF {
 			zap.S().Infof("End of file")
+			wr.End <- true
 			break
 		} else if err != nil {
 			zap.S().Errorf("Worker error", err)
@@ -80,7 +83,7 @@ func (wr *Worker) readPokemons(itemsPerWorker int) {
 		zap.S().Infof("Pokemon worker: ", record)
 		result = append(result, record)
 	}
-	wr.OutputChannel <- result
+	wr.OutputChannel <- result[1:] // Skip header line
 	zap.S().Infof("Slice length", len(result))
 	zap.S().Infof("Slice content", result)
 }

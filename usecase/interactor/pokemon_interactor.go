@@ -91,7 +91,7 @@ func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *ucE
 }
 
 func (pi *pokemonInteractor) BatchReadingPokemon(disc string, items int, itemsPerworker int) [][]string {
-	disp := pi.WorkerPool.SetPoolSize(items).Start()
+	disp := pi.WorkerPool.SetPoolSize(items, itemsPerworker).Start()
 	for i := 0; i < items; i++ {
 		disp.Submit(pool.Job{
 			ID:        i,

@@ -19,16 +19,13 @@ type pokemonController struct {
 
 // PokemonController - Holds the abstraction of controller methods.
 type PokemonController interface {
-	/*
-		GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
-		It will return an error as HTTP response if something goes wrong.
-	*/
+
+	// GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
+	// It will return an error as HTTP response if something goes wrong.
 	GetByID(c Context)
-	/*
-		GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
-		It will return an error as HTTP response if something goes wrong.
-		If the HTTP request fails nothing will gonna be stored.
-	*/
+	// GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
+	// It will return an error as HTTP response if something goes wrong.
+	// If the HTTP request fails nothing will gonna be stored.
 	GetByName(c Context)
 	BatchSearching(c Context)
 }
@@ -38,10 +35,8 @@ func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 	return &pokemonController{pi}
 }
 
-/*
-	GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
-	It will return an error as HTTP response if something goes wrong.
-*/
+// GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
+// It will return an error as HTTP response if something goes wrong.
 func (pc *pokemonController) GetByID(c Context) {
 	requestId := c.Param("id")
 	if pokemonId, err := strconv.Atoi(requestId); err == nil {
@@ -67,11 +62,9 @@ func (pc *pokemonController) GetByID(c Context) {
 	}
 }
 
-/*
-	GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
-	It will return an error as HTTP response if something goes wrong.
-	If the HTTP request fails nothing will gonna be stored.
-*/
+// GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
+// It will return an error as HTTP response if something goes wrong.
+// If the HTTP request fails nothing will gonna be stored.
 func (pc *pokemonController) GetByName(c Context) {
 	pokemonName := c.Param("name")
 	response, err := pc.pokemonInteractor.GetPokemonByName(pokemonName)

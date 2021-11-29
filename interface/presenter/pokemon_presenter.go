@@ -17,7 +17,7 @@ type pokemonPresenter struct{}
 // PokemonPresenter - Holds an abstraction of presenter methods.
 type PokemonPresenter interface {
 	ResponsePokemon(p *model.Pokemon) *model.Pokemon
-	ResponseMappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon
+	ResponseMappedPokemonFromAPI(p *api.APIResponse) *model.Pokemon
 }
 
 // NewPokemonPresenter - Create and returns a concret instance of pokemonPresenter.
@@ -30,9 +30,9 @@ func (pp *pokemonPresenter) ResponsePokemon(p *model.Pokemon) *model.Pokemon {
 	return p
 }
 
-// ResponseMappedPokemonFromAPI - Receives an ApiResponse, deserialize the JSON string and mapped to Pokemon model.
+// ResponseMappedPokemonFromAPI - Receives an APIResponse, deserialize the JSON string and mapped to Pokemon model.
 // It will generate a random ID (between 10 - 1000) and pick the first ability in the response.
-func (pp *pokemonPresenter) ResponseMappedPokemonFromAPI(p *api.ApiResponse) *model.Pokemon {
+func (pp *pokemonPresenter) ResponseMappedPokemonFromAPI(p *api.APIResponse) *model.Pokemon {
 	// Generating random id
 	rand.Seed(time.Now().UnixNano())
 	max := 1000

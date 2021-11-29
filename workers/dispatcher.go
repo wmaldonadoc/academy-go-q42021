@@ -1,13 +1,15 @@
 package workers
 
 import (
+	"math"
+
 	worker "github.com/wmaldonadoc/academy-go-q42021/workers/pool"
 
 	"go.uber.org/zap"
 )
 
 type Dispatcher interface {
-	SetPoolSize(num int) *Disp
+	SetPoolSize(num int, itemsPerWorker int) *Disp
 	Start() *Disp
 	Submit(job worker.Job)
 }
@@ -30,9 +32,11 @@ func NewDispatcher() *Disp {
 	return &Disp{}
 }
 
-func (d *Disp) SetPoolSize(size int) *Disp {
+func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
+	poolSize := int(math.Ceil(float64(size) / float64(itemsPerWorker)))
+	zap.S().Debug("Pool size obtained: ", poolSize)
 	return &Disp{
-		Workers:       make([]*worker.Worker, size),
+		Workers:       make([]*worker.Worker, poolSize),
 		WorkChan:      make(worker.JobChannel),
 		Queue:         make(worker.JobQueue),
 		OutputChannel: make(worker.PokemonChan),
@@ -53,6 +57,7 @@ func (d *Disp) Start() *Disp {
 			make(chan struct{}),
 			d.ItemsLimit,
 			d.OutputChannel,
+			d.End,
 		)
 		wrk.Start()
 		d.Workers = append(d.Workers, wrk)
@@ -72,8 +77,8 @@ func (d *Disp) process() {
 			jobChan := <-d.Queue
 			jobChan <- job
 
-		case <-d.End:
-			zap.S().Infof("Shutting down workers")
+		case end := <-d.End:
+			zap.S().Infof("Shutting down workers", end)
 		}
 	}
 }

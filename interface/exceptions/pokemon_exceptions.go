@@ -6,12 +6,10 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 )
 
-/*
-	RequestError - Represents exceptions with the following fields:
-	- Message
-	- HTTPStatus
-	- Code: Represents a custom error code
-*/
+//	RequestError - Represents exceptions with the following fields:
+//	- Message
+//	- HTTPStatus
+//	- Code: Represents a custom error code
 type RequestError struct {
 	Message    string
 	HTTPStatus int
