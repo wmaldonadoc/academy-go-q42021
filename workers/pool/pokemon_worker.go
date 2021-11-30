@@ -28,7 +28,7 @@ type Job struct {
 type JobChannel chan Job
 
 // JobQueue - Shared JobPool between the workers
-type JobQueue chan chan Job
+type JobQueue chan *Job
 
 // PokemonChan - Results output chan
 type PokemonChan chan []*model.Pokemon
@@ -38,50 +38,55 @@ type End chan bool
 
 // Worker
 type Worker struct {
-	ID            int
-	JobChan       JobChannel
-	Queue         JobQueue // shared between all workers and dispatchers.
-	Quit          chan struct{}
-	ItemsLimit    int
-	OutputChannel PokemonChan
-	End           End
+	ID            int         // Unique ID
+	JobChan       JobChannel  // Client submits job to this channel
+	Queue         JobQueue    // shared between all workers and dispatchers.
+	ItemsLimit    int         // Represents the items per worker to collect
+	OutputChannel PokemonChan // Holds the result of jobs
+	End           End         // Worker end flag
+	WorkersSize   int         // Number of workers available
 }
 
-func NewPokemonWorker(ID int, JobChan JobChannel, Queue JobQueue, Quit chan struct{}, itemsPerWorker int, out PokemonChan, end chan bool) *Worker {
+// NewPokemonWorker - Create a instance of Worker
+func NewPokemonWorker(
+	ID int,
+	JobChan JobChannel,
+	Queue JobQueue,
+	itemsPerWorker int,
+	out PokemonChan,
+	end chan bool,
+	workerSize int,
+) *Worker {
+	zap.S().Infof("Worker ID::%d created", ID)
 	return &Worker{
 		ID:            ID,
 		JobChan:       JobChan,
 		Queue:         Queue,
-		Quit:          Quit,
 		ItemsLimit:    itemsPerWorker,
 		OutputChannel: out,
 		End:           end,
+		WorkersSize:   workerSize,
 	}
 }
 
+// Start - Runs the listening of jobs and distributed to workers
 func (wr *Worker) Start() {
 	go func() {
 		for {
-			wr.Queue <- wr.JobChan
-			select {
-			case job := <-wr.JobChan:
-				zap.S().Infof("Job at worker: ", job)
-				wr.readPokemons(wr.ItemsLimit)
-			case <-wr.Quit:
-				close(wr.JobChan)
-				return
-			case end := <-wr.End:
-				zap.S().Infof("Shutting down worker", end)
-				return
+			job := <-wr.Queue
+			if job != nil {
+				wr.readPokemons(wr.ItemsLimit, *job)
+			} else {
+				zap.S().Debugf("Workers stopped")
+				break
 			}
 		}
+
 	}()
+
 }
 
-func (wr *Worker) Stop() {
-	wr.End <- true
-}
-
+// parsePokemon - Map a CSV row to slice of pokemon model
 func parsePokemon(data [][]string) ([]*model.Pokemon, *pokerrors.DefaultError) {
 	var pokemons []*model.Pokemon
 	for _, line := range data {
@@ -99,28 +104,34 @@ func parsePokemon(data [][]string) ([]*model.Pokemon, *pokerrors.DefaultError) {
 	return pokemons, nil
 }
 
-func (wr *Worker) readPokemons(itemsPerWorker int) {
+// readPokemons - Open the CSV file and each worker attach their items recollect to output channel
+
+func (wr *Worker) readPokemons(itemsPerWorker int, job Job) {
 	var result [][]string
 	reader := datastore.OpenFileConcurrently()
-	zap.S().Debugf("Worker ID [%d] working...", wr.ID)
+	zap.S().Debugf("Worker ID [%d] working, need to reach %d items", wr.ID, itemsPerWorker)
+
 	itemsPerWorker += 1 // Support the header skipping
-	for i := 0; i < itemsPerWorker; i++ {
-		record, err := reader.Read()
-		if err == io.EOF {
-			zap.S().Infof("End of file")
-			wr.End <- true
-			break
-		} else if err != nil {
-			zap.S().Errorf("Worker error", err)
+	for j := 0; j < wr.WorkersSize; j++ {
+		for i := 0; i < itemsPerWorker; i++ {
+			record, err1 := reader.Read()
+			if err1 == io.EOF {
+				zap.S().Infof("End of file")
+				break
+			} else if err1 != nil {
+				zap.S().Errorf("Worker error", err1)
+			}
+			zap.S().Infof("Pokemon worker: ", record)
+			result = append(result, record)
+			zap.S().Infof("Worker %d collect %s ", wr.ID, record)
 		}
-		zap.S().Infof("Pokemon worker: ", record)
-		result = append(result, record)
 	}
+
 	pokemon, err := parsePokemon(result[1:])
 	if err != nil {
 		zap.S().Error("Error parsing pokemons", err)
 	}
+
 	wr.OutputChannel <- pokemon
-	zap.S().Infof("Slice length", len(result))
-	zap.S().Infof("Slice content", result)
+	zap.S().Infof("Worker %d collect %d pokemons", wr.ID, len(result))
 }

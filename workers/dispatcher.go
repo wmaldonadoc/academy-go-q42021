@@ -2,6 +2,7 @@ package workers
 
 import (
 	"math"
+	"sync"
 
 	worker "github.com/wmaldonadoc/academy-go-q42021/workers/pool"
 
@@ -27,6 +28,7 @@ type Disp struct {
 	OutputChannel worker.PokemonChan
 	ItemsLimit    int
 	End           chan bool
+	WG            sync.WaitGroup
 }
 
 //  NewDispatcher - New returns a new dispatcher. A Dispatcher communicates between the client
@@ -47,7 +49,7 @@ func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
 		WorkChan:      make(worker.JobChannel),
 		Queue:         make(worker.JobQueue),
 		OutputChannel: make(worker.PokemonChan),
-		ItemsLimit:    size,
+		ItemsLimit:    itemsPerWorker,
 		End:           make(chan bool),
 	}
 }
@@ -62,10 +64,10 @@ func (d *Disp) Start() *Disp {
 			i,
 			make(worker.JobChannel),
 			d.Queue,
-			make(chan struct{}),
 			d.ItemsLimit,
 			d.OutputChannel,
 			d.End,
+			len(d.Workers),
 		)
 		wrk.Start()
 		d.Workers = append(d.Workers, wrk)
@@ -79,14 +81,12 @@ func (d *Disp) Start() *Disp {
 // the workers.
 func (d *Disp) process() {
 	for data := range d.WorkChan {
-		zap.S().Infof("Data work", data)
 		select {
-		case job := <-d.WorkChan:
-			jobChan := <-d.Queue
-			jobChan <- job
-
-		case end := <-d.End:
-			zap.S().Infof("Shutting down workers", end)
+		case <-d.WorkChan:
+			zap.S().Infof("Job ready: ", data)
+			d.Queue <- &data
+		case <-d.End:
+			zap.S().Debugf("Shutting down workers")
 		}
 	}
 }

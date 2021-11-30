@@ -102,6 +102,5 @@ func (pi *pokemonInteractor) BatchFilter(disc string, items int, itemsPerworker 
 	}
 	zap.S().Info("Interactor %v", disp.OutputChannel)
 	resp := <-disp.OutputChannel
-
 	return resp
 }
