@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/router"
 	"github.com/wmaldonadoc/academy-go-q42021/registry"
@@ -33,7 +34,8 @@ func main() {
 	}()
 	logger := loggerMgr.Sugar()
 
-	db, err := datastore.NewCSV()
+	filePath := config.GetEnvVariable("FILE_LOCATION")
+	db, err := datastore.NewCSV(filePath)
 	if err != nil {
 		zap.S().Error("Error bootstraping CSV file")
 	}

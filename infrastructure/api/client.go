@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// HTTPHandler abstract the representation of a HTTPClient and their methods.
+// In this case
+type HTTPHandler interface {
+	Get(url string) (*http.Response, error)
+}
+
 //	APIResponse - Represents an abstraction of HTTP response.
 //	- Headers: HTTP response headers
 //	- Body: HTTP response body as string
@@ -19,14 +25,19 @@ type APIResponse struct {
 	HTTPStatus int
 }
 
+// HTTPClient it's the concrete object of HTTPHandler
+type HTTPClient struct {
+	Client HTTPHandler
+}
+
 // NewApiClient - Returns an instance of APIResponse
-func NewApiClient() *APIResponse {
-	return &APIResponse{}
+func NewApiClient(clnt HTTPHandler) *HTTPClient {
+	return &HTTPClient{clnt}
 }
 
 // Get - Make a HTTP request and returns the response mapped to APIResponse
-func (a *APIResponse) Get(url string) (*APIResponse, *pokerrors.APIClientError) {
-	resp, err := http.Get(url)
+func (handler *HTTPClient) Get(url string) (*APIResponse, *pokerrors.APIClientError) {
+	resp, err := handler.Client.Get(url)
 	if err != nil {
 		zap.S().Error("Error to request GET to " + url)
 		requestError := pokerrors.GenerateAPIError("Error requesting third part API")
