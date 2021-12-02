@@ -1,16 +1,13 @@
 package router
 
 import (
-	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // NewRouter - Setup & returns the API routes.
-func NewRouter(controller controller.AppController) {
-	port := config.GetEnvVariable("PORT")
+func NewRouter(controller controller.AppController) *gin.Engine {
 	router := gin.Default()
 	mainGroup := router.Group("/api/v1")
 	{
@@ -26,8 +23,6 @@ func NewRouter(controller controller.AppController) {
 			healthRoutes.GET("/", func(context *gin.Context) { controller.Health.GetServiceHealth(context) })
 		}
 	}
-	if err := router.Run(port); err != nil {
-		zap.S().Errorf("Error bootstrapping routes", err)
-	}
-	zap.S().Infof("API running at port", port)
+
+	return router
 }

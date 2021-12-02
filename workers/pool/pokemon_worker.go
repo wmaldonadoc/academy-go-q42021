@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
 	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
@@ -54,7 +55,7 @@ func NewPokemonWorker(
 	Queue JobQueue,
 	itemsPerWorker int,
 	out PokemonChan,
-	end chan bool,
+	end End,
 	workerSize int,
 ) *Worker {
 	zap.S().Infof("Worker ID::%d created", ID)
@@ -77,13 +78,12 @@ func (wr *Worker) Start() {
 			if job != nil {
 				wr.readPokemons(wr.ItemsLimit, *job)
 			} else {
-				zap.S().Debugf("Workers stopped")
+				zap.S().Debugf("Worker %d stopped", wr.ID)
+				wr.End <- true
 				break
 			}
 		}
-
 	}()
-
 }
 
 // parsePokemon - Map a CSV row to slice of pokemon model
@@ -111,27 +111,23 @@ func (wr *Worker) readPokemons(itemsPerWorker int, job Job) {
 	reader := datastore.OpenFileConcurrently()
 	zap.S().Debugf("Worker ID [%d] working, need to reach %d items", wr.ID, itemsPerWorker)
 
-	itemsPerWorker += 1 // Support the header skipping
-	for j := 0; j < wr.WorkersSize; j++ {
-		for i := 0; i < itemsPerWorker; i++ {
-			record, err1 := reader.Read()
-			if err1 == io.EOF {
-				zap.S().Infof("End of file")
-				break
-			} else if err1 != nil {
-				zap.S().Errorf("Worker error", err1)
-			}
-			zap.S().Infof("Pokemon worker: ", record)
-			result = append(result, record)
-			zap.S().Infof("Worker %d collect %s ", wr.ID, record)
+	items := (itemsPerWorker + wr.WorkersSize) + constants.FIXCSVHEADER
+	for j := 0; j < items; j++ {
+		record, err := reader.Read()
+		if err == io.EOF {
+			zap.S().Infof("End of file")
+			break
+		} else if err != nil {
+			zap.S().Errorf("Worker error", err)
+			break
 		}
+		zap.S().Infof("Pokemon worker: ", record)
+		result = append(result, record)
+		zap.S().Debugf("Worker %d collect %d pokemons", wr.ID, len(result))
 	}
-
-	pokemon, err := parsePokemon(result[1:])
-	if err != nil {
-		zap.S().Error("Error parsing pokemons", err)
+	pokemon, pError := parsePokemon(result[1:])
+	if pError != nil {
+		zap.S().Error("Error parsing pokemons", pError)
 	}
-
 	wr.OutputChannel <- pokemon
-	zap.S().Infof("Worker %d collect %d pokemons", wr.ID, len(result))
 }

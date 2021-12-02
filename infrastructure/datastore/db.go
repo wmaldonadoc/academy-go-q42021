@@ -15,12 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type FS struct {
-	Open func(name string) (*os.File, error)
-}
+type OpenCSV func(name string) (*os.File, error)
 
-func openFile(fileLocation string) ([][]string, *pokerrors.DefaultError) {
-	file, err := os.Open(fileLocation)
+func openFile(fileLocation string, openFunc OpenCSV) ([][]string, *pokerrors.DefaultError) {
+	file, err := openFunc(fileLocation)
 	zap.S().Debugf("File located at: ", fileLocation)
 	if err != nil {
 		zap.S().Errorf("Error opening the CSV file %s", err)
@@ -77,9 +75,9 @@ func GeneratePokemonsFromCSV(id int, data []string) *model.Pokemon {
 }
 
 // NewCSV - Open and reads a CSV file and return it as a slice of pokemons.
-func NewCSV(fileLocation string) ([]*model.Pokemon, *pokerrors.DefaultError) {
+func NewCSV(fileLocation string, open OpenCSV) ([]*model.Pokemon, *pokerrors.DefaultError) {
 	pokemones := []*model.Pokemon{}
-	chunks, err := openFile(fileLocation)
+	chunks, err := openFile(fileLocation, open)
 	if err != nil {
 		zap.S().Error("Error with datastore connection", err)
 		connError := pokerrors.GenerateDefaultError(err.Message)

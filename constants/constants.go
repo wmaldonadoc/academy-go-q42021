@@ -24,4 +24,6 @@ const (
 	MAXIDALLOWED = 1000
 	// MINIDALLOWED constant represents the maximum threshold of ID seed to generated
 	MINIDALLOWED = 10
+	// FIXCSVHEADER constant represent the fixing number to skip the first row of CSV
+	FIXCSVHEADER = 1
 )

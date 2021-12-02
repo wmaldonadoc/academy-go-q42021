@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -18,7 +19,9 @@ func TestNewCSV(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := NewCSV(test.filePath)
+		var osvfs = os.Open
+
+		got, err := NewCSV(test.filePath, osvfs)
 		if err != nil {
 			if !reflect.DeepEqual(err.Code, test.errCode) {
 				t.Error(err)

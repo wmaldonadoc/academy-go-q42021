@@ -16,6 +16,9 @@ type Dispatcher interface {
 	// Start - creates pool of num count of workers.
 	// Also dispatch the worker's jobs.
 	Start() *Disp
+	// Stop - Iterates over every worker and add them into a wainting group
+	// and run a gracefully stop when a worker done
+	Stop()
 	// Submit - Receive a job and add to WorkChan's queue.
 	Submit(job worker.Job)
 }
@@ -27,8 +30,7 @@ type Disp struct {
 	Queue         worker.JobQueue   // Shared JobPool between the workers
 	OutputChannel worker.PokemonChan
 	ItemsLimit    int
-	End           chan bool
-	WG            sync.WaitGroup
+	End           worker.End
 }
 
 //  NewDispatcher - New returns a new dispatcher. A Dispatcher communicates between the client
@@ -42,7 +44,7 @@ func NewDispatcher() *Disp {
 // SetPoolSize - Create the worker pool and and return a Dispatch with the channels to handle the jobs.
 // The number of workers are calculated given ⌈ITEMS / ITEMSPERWORKER⌉
 func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
-	poolSize := int(math.Ceil(float64(size) / float64(itemsPerWorker)))
+	poolSize := int(math.Floor(float64(size) / float64(itemsPerWorker)))
 	zap.S().Debug("Pool size obtained: ", poolSize)
 	return &Disp{
 		Workers:       make([]*worker.Worker, poolSize),
@@ -50,14 +52,13 @@ func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
 		Queue:         make(worker.JobQueue),
 		OutputChannel: make(worker.PokemonChan),
 		ItemsLimit:    itemsPerWorker,
-		End:           make(chan bool),
+		End:           make(worker.End),
 	}
 }
 
 // Start - creates pool of num count of workers.
 // Also dispatch the worker's jobs.
 func (d *Disp) Start() *Disp {
-	zap.S().Infof("Dispatcher build %v", d)
 	l := len(d.Workers)
 	for i := 1; i <= l; i++ {
 		wrk := worker.NewPokemonWorker(
@@ -76,18 +77,30 @@ func (d *Disp) Start() *Disp {
 	return d
 }
 
+// Stop - Iterates over every worker and add them into a wainting group
+// and run a gracefully stop when a worker done
+func (d *Disp) Stop() {
+	var wg sync.WaitGroup
+	for _, w := range d.Workers {
+		wg.Add(1)
+		go func(wr *worker.Worker) {
+			defer wg.Done()
+		}(w)
+	}
+	wg.Wait()
+	zap.S().Debugf("All workers stopped")
+}
+
 // process -  listens to a job submitted on WorkChan and
 // relays it to the WorkPool. The WorkPool is shared between
 // the workers.
 func (d *Disp) process() {
 	for data := range d.WorkChan {
-		select {
-		case <-d.WorkChan:
-			zap.S().Infof("Job ready: ", data)
-			d.Queue <- &data
-		case <-d.End:
-			zap.S().Debugf("Shutting down workers")
-		}
+		work := <-d.WorkChan
+
+		zap.S().Infof("Job ready: ", work)
+		d.Queue <- &data
+
 	}
 }
 

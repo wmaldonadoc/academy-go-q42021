@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/wmaldonadoc/academy-go-q42021/config"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/datastore"
@@ -24,6 +25,7 @@ func bootingGlobalLogger() *zap.Logger {
 }
 
 func main() {
+	port := config.GetEnvVariable("PORT")
 	loggerMgr := bootingGlobalLogger()
 	zap.ReplaceGlobals(loggerMgr)
 	defer func() {
@@ -33,14 +35,20 @@ func main() {
 		}
 	}()
 	logger := loggerMgr.Sugar()
-
+	var openFunc = os.Open
 	filePath := config.GetEnvVariable("FILE_LOCATION")
-	db, err := datastore.NewCSV(filePath)
+	db, err := datastore.NewCSV(filePath, openFunc)
 	if err != nil {
 		zap.S().Error("Error bootstraping CSV file")
 	}
 	r := registry.NewRegistry(db)
 
 	logger.Debug("Booting routes...")
-	router.NewRouter(r.NewAppController())
+	rtr := router.NewRouter(r.NewAppController())
+
+	if err := rtr.Run(port); err != nil {
+		zap.S().Error("Error bootstraping router", err)
+	}
+
+	zap.S().Infof("Route booted successfully")
 }
