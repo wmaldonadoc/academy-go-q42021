@@ -5,12 +5,18 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/schemas"
 	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 	"github.com/wmaldonadoc/academy-go-q42021/usecase/interactor"
 
 	"go.uber.org/zap"
 )
+
+type ControllerResponse struct {
+	HTTPStatus int         `json:"status"`
+	Data       interface{} `json:"data"`
+}
 
 type pokemonController struct {
 	pokemonInteractor interactor.PokemonInteractor
@@ -21,14 +27,14 @@ type PokemonController interface {
 
 	// GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
 	// It will return an error as HTTP response if something goes wrong.
-	GetByID(c Context)
+	GetByID(c Context) *ControllerResponse
 	// GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
 	// It will return an error as HTTP response if something goes wrong.
 	// If the HTTP request fails nothing will gonna be stored.
-	GetByName(c Context)
+	GetByName(c Context) *ControllerResponse
 	// FilterSearching - Reads the CSV file using a worker pool and return the requested items.
 	// It will return an error as HTTP response if something goes wrong.
-	FilterSearching(c Context)
+	FilterSearching(c Context) *ControllerResponse
 }
 
 // NewPokemonController - Receive the controller interactor and returns a conrete instance of the controller.
@@ -38,74 +44,117 @@ func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
 
 // GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
 // It will return an error as HTTP response if something goes wrong.
-func (pc *pokemonController) GetByID(c Context) {
+func (pc *pokemonController) GetByID(c Context) *ControllerResponse {
+	requestError := pokerrors.DefaultError{}
+	response := ControllerResponse{}
 	var req schemas.GetPokemonById
 	if err := c.BindUri(&req); err != nil {
 		zap.S().Errorf("CONTROLLER: The id should be a integer %s", err)
-		parseError := pokerrors.GenerateUnprocessableEntityError("The id should be a integer")
-		c.AbortWithStatusJSON(parseError.HTTPStatus, parseError)
+		requestError.Code = constants.UnprocessableEntityExceptionCode
+		requestError.HTTPStatus = http.StatusUnprocessableEntity
+		requestError.Message = "The id should be a integer"
 
-		return
+		response.HTTPStatus = requestError.HTTPStatus
+		response.Data = requestError
+
+		return &response
 	}
 	p, err := pc.pokemonInteractor.GetByID(req.ID)
 	if err != nil {
 		zap.S().Errorf("CONTROLLER: Error searching pokemon by id %s", err)
-		genericException := pokerrors.GenerateNotFoundError("Error searching pokemon by id")
-		c.AbortWithStatusJSON(genericException.HTTPStatus, &genericException)
+		requestError.Code = constants.NotFoundExceptionCode
+		requestError.HTTPStatus = http.StatusNotFound
+		requestError.Message = "Error searching pokemon by id"
 
-		return
+		response.HTTPStatus = requestError.HTTPStatus
+		response.Data = requestError
+
+		return &response
 	}
-	c.JSON(http.StatusOK, p)
+
+	response.HTTPStatus = http.StatusOK
+	response.Data = p
+
+	return &response
 }
 
 // GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
 // It will return an error as HTTP response if something goes wrong.
 // If the HTTP request fails nothing will gonna be stored.
-func (pc *pokemonController) GetByName(c Context) {
+func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
+	requestError := pokerrors.DefaultError{}
+	response := ControllerResponse{}
 	var req schemas.GetPokemonByName
 	if err := c.BindUri(&req); err != nil {
 		zap.S().Errorf("CONTROLLER: The name its mandatory %s", err)
-		parseError := pokerrors.GenerateUnprocessableEntityError("The name its mandatory")
-		c.AbortWithStatusJSON(parseError.HTTPStatus, parseError)
+		requestError.Code = constants.UnprocessableEntityExceptionCode
+		requestError.HTTPStatus = http.StatusUnprocessableEntity
+		requestError.Message = "The name its mandatory"
 
-		return
+		response.HTTPStatus = requestError.HTTPStatus
+		response.Data = requestError
+
+		return &response
+
 	}
-	response, err := pc.pokemonInteractor.GetPokemonByName(req.Name)
+	resp, err := pc.pokemonInteractor.GetPokemonByName(req.Name)
 	if err != nil {
 		zap.S().Errorf("CONTROLLER: Error getting pokemon %s", req.Name)
-		genericException := pokerrors.GenerateDefaultError("Error getting pokemon " + req.Name)
-		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
+		requestError.Code = constants.DefaultExceptionCode
+		requestError.HTTPStatus = http.StatusInternalServerError
+		requestError.Message = "Error getting pokemon " + req.Name
 
-		return
+		response.HTTPStatus = requestError.HTTPStatus
+		response.Data = requestError
+
+		return &response
+
 	}
-	record, repositoryError := pc.pokemonInteractor.CreateOne(response)
+	record, repositoryError := pc.pokemonInteractor.CreateOne(resp)
 	if repositoryError != nil {
 		zap.S().Error("CONTROLLER: Error storing pokemon")
-		genericException := pokerrors.GenerateDefaultError("Error storing pokemon " + req.Name)
-		c.AbortWithStatusJSON(genericException.HTTPStatus, genericException)
+		requestError.Code = constants.DefaultExceptionCode
+		requestError.HTTPStatus = http.StatusInternalServerError
+		requestError.Message = "Error getting pokemon " + req.Name
 
-		return
+		response.HTTPStatus = requestError.HTTPStatus
+		response.Data = requestError
+
+		return &response
 	}
 
-	c.JSON(http.StatusOK, record)
+	response.HTTPStatus = http.StatusOK
+	response.Data = record
+
+	return &response
 }
 
 // FilterSearching - Reads the CSV file using a worker pool and return the requested items.
 // It will return an error as HTTP response if something goes wrong.
-func (pc *pokemonController) FilterSearching(c Context) {
+func (pc *pokemonController) FilterSearching(c Context) *ControllerResponse {
+	requestError := pokerrors.DefaultError{}
+	response := ControllerResponse{}
 	var req schemas.BatchSearchingSchema
 	if err := c.ShouldBindQuery(&req); err != nil {
 		for _, field := range err.(validator.ValidationErrors) {
 			zap.S().Debugf("CONTROLLER: Request error ", field.Error())
 			message := fmt.Sprint("Missing query string param " + field.StructField() + " condition: " + field.ActualTag())
-			requestError := pokerrors.GenerateUnprocessableEntityError(message)
-			c.AbortWithStatusJSON(requestError.HTTPStatus, requestError)
-			return
+			requestError.Code = constants.UnprocessableEntityExceptionCode
+			requestError.HTTPStatus = http.StatusUnprocessableEntity
+			requestError.Message = message
+
+			response.HTTPStatus = requestError.HTTPStatus
+			response.Data = requestError
+
+			return &response
 		}
 	}
 	zap.S().Infof("Request: ", req.Items)
 	zap.S().Infof("Request: ", req.ItemsPerWorker)
 	zap.S().Infof("Request: ", req.Type)
 	resp := pc.pokemonInteractor.BatchFilter(req.Type, req.Items, req.ItemsPerWorker)
-	c.JSON(http.StatusOK, resp)
+	response.HTTPStatus = http.StatusOK
+	response.Data = resp
+
+	return &response
 }

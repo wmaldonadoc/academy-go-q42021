@@ -13,14 +13,26 @@ func NewRouter(controller controller.AppController) *gin.Engine {
 	{
 		pokemonRoutes := mainGroup.Group("/pokemons")
 		{
-			pokemonRoutes.GET("/id/:id", func(context *gin.Context) { controller.Pokemon.GetByID(context) })
-			pokemonRoutes.GET("/name/:name", func(context *gin.Context) { controller.Pokemon.GetByName(context) })
-			pokemonRoutes.GET("/filter", func(context *gin.Context) { controller.Pokemon.FilterSearching(context) })
+			pokemonRoutes.GET("/id/:id", func(context *gin.Context) {
+				resp := controller.Pokemon.GetByID(context)
+				context.JSON(resp.HTTPStatus, resp.Data)
+			})
+			pokemonRoutes.GET("/name/:name", func(context *gin.Context) {
+				resp := controller.Pokemon.GetByName(context)
+				context.JSON(resp.HTTPStatus, resp.Data)
+			})
+			pokemonRoutes.GET("/filter", func(context *gin.Context) {
+				resp := controller.Pokemon.FilterSearching(context)
+				context.JSON(resp.HTTPStatus, resp.Data)
+			})
 		}
 
 		healthRoutes := mainGroup.Group("/health")
 		{
-			healthRoutes.GET("/", func(context *gin.Context) { controller.Health.GetServiceHealth(context) })
+			healthRoutes.GET("/", func(context *gin.Context) {
+				resp := controller.Health.GetServiceHealth(context)
+				context.JSON(resp.HTTPStatus, resp.Data)
+			})
 		}
 	}
 
