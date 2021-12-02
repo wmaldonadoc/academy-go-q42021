@@ -125,9 +125,11 @@ func (wr *Worker) readPokemons(itemsPerWorker int, job Job) {
 		result = append(result, record)
 		zap.S().Debugf("Worker %d collect %d pokemons", wr.ID, len(result))
 	}
+
 	pokemon, pError := parsePokemon(result[1:])
 	if pError != nil {
 		zap.S().Error("Error parsing pokemons", pError)
 	}
+
 	wr.OutputChannel <- pokemon
 }
