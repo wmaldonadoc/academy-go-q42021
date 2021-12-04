@@ -114,8 +114,8 @@ func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
 	if repositoryError != nil {
 		zap.S().Error("CONTROLLER: Error storing pokemon")
 		requestError.Code = constants.DefaultExceptionCode
-		requestError.HTTPStatus = http.StatusInternalServerError
-		requestError.Message = "Error getting pokemon " + req.Name
+		requestError.HTTPStatus = repositoryError.HTTPStatus
+		requestError.Message = "Error storing pokemon " + req.Name
 
 		response.HTTPStatus = requestError.HTTPStatus
 		response.Data = requestError

@@ -1,92 +1,106 @@
-package repository_test
+package repository
 
 import (
-	"fmt"
-	"os"
+	"encoding/json"
+	"reflect"
+	"testing"
+	"testing/fstest"
 
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
-	"github.com/wmaldonadoc/academy-go-q42021/interface/repository"
 
 	"github.com/bxcodec/faker/v3"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Repository", func() {
+func TestFindByID(t *testing.T) {
 	var pokemons []*model.Pokemon
 
-	BeforeSuite(func() {
-		for i := 0; i < 10; i++ {
-			pokemon := model.Pokemon{
-				ID:      i,
-				Name:    faker.Name(),
-				Ability: faker.Word(),
-			}
-			pokemons = append(pokemons, &pokemon)
+	for i := 0; i < 10; i++ {
+		pokemon := model.Pokemon{
+			ID:      i,
+			Name:    faker.Name(),
+			Ability: faker.Word(),
 		}
-	})
+		pokemons = append(pokemons, &pokemon)
+	}
 
-	Describe("Pokemon repository", func() {
-		Context("Finding a pokemon by ID", func() {
-			It("Should return the pokemon record with the matching ID", func() {
-				//Arrange
-				id, _ := faker.RandomInt(1, 10)
-				//Act
-				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.FindByID(id[0])
-				//Assert
-				fmt.Printf("ID generated %v", id[0])
-				Expect(result).ShouldNot(BeNil())
-				Expect(err).Should(BeNil())
-				Expect(result.ID).Should(Equal(id[0]))
-			})
-			It("Should return a NotFoundError when the ID passed doesn't exists", func() {
-				//Arrange
-				id, _ := faker.RandomInt(11, 20)
-				//Act
-				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.FindByID(id[0])
-				//Assert
-				Expect(result).Should(BeNil())
-				Expect(err).ShouldNot(BeNil())
-				Expect(err.Code).Should(Equal(constants.NotFoundExceptionCode))
-			})
-		})
-		Context("Storing a new pokemon", func() {
-			It("Should return a WritingCSVError whit a bad file location", func() {
-				//Arrange
-				id, _ := faker.RandomInt(0, 10)
-				poke := model.Pokemon{
-					ID:      id[0],
-					Name:    faker.Name(),
-					Ability: faker.Word(),
-				}
-				//Act
-				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.CreateOne(&poke)
-				//Assert
-				Expect(result).Should(BeNil())
-				Expect(err).ShouldNot(BeNil())
-				Expect(err.Code).Should(Equal(constants.WritingCSVFileExceptionCode))
-			})
-			It("Should return a WritingCSVError whit a bad file location", func() {
-				//Arrange
-				os.Setenv("FILE_LOCATION", "../../infrastructure/datastore/data-test.csv")
-				id, _ := faker.RandomInt(0, 10)
-				poke := model.Pokemon{
-					ID:      id[0],
-					Name:    faker.Name(),
-					Ability: faker.Word(),
-				}
-				//Act
-				repo := repository.NewPokemonRepository(pokemons)
-				result, err := repo.CreateOne(&poke)
-				//Assert
-				Expect(result).ShouldNot(BeNil())
-				Expect(err).Should(BeNil())
-				Expect(result.ID).Should(Equal(id[0]))
-			})
-		})
-	})
-})
+	tests := []struct {
+		name    string
+		id      int
+		errCode int
+	}{
+		{name: "Return a pokemon", id: 1},
+		{name: "Return a not found error", id: 100, errCode: constants.NotFoundExceptionCode},
+	}
+
+	repo := NewPokemonRepository(pokemons)
+	for _, test := range tests {
+		result, err := repo.FindByID(test.id)
+
+		if test.errCode != 0 {
+			if !reflect.DeepEqual(err.Code, test.errCode) {
+				t.Errorf("%s: Expected %d but got %d", test.name, test.errCode, err.Code)
+			}
+		}
+
+		if test.errCode == 0 {
+			if !reflect.DeepEqual(result.ID, test.id) {
+				t.Errorf("%s: Expected %d but got %d", test.name, test.id, result.ID)
+			}
+		}
+	}
+}
+
+func TestCreateOne(t *testing.T) {
+	var pokemons []*model.Pokemon
+
+	for i := 0; i < 10; i++ {
+		pokemon := model.Pokemon{
+			ID:      i,
+			Name:    faker.Name(),
+			Ability: faker.Word(),
+		}
+		pokemons = append(pokemons, &pokemon)
+	}
+
+	tests := []struct {
+		name       string
+		id         int
+		errCode    int
+		shouldFail bool
+	}{
+		{name: "Failed storing a pokemon", errCode: constants.DefaultExceptionCode, shouldFail: true},
+		{name: "Storing a pokemon", shouldFail: false},
+	}
+
+	repo := NewPokemonRepository(pokemons)
+
+	for i, test := range tests {
+		json, _ := json.Marshal(pokemons)
+		mockFS := fstest.MapFS{
+			"data.csv": {
+				Data: []byte(json),
+			},
+		}
+
+		data, errFS := mockFS.ReadFile("data.csv")
+
+		if errFS != nil {
+			t.Error(errFS)
+		}
+		t.Log(data)
+		pokemonAt := pokemons[i]
+		test.id = pokemonAt.ID
+		result, err := repo.CreateOne(pokemonAt)
+
+		if test.shouldFail {
+			if !reflect.DeepEqual(test.errCode, err.Code) {
+				t.Errorf("%s: Expected error code %d but got %d", test.name, test.errCode, err.Code)
+			}
+		} else {
+			if !reflect.DeepEqual(result.ID, test.id) {
+				t.Errorf("%s: Expected %d but got %d", test.name, test.id, result.ID)
+			}
+		}
+	}
+}

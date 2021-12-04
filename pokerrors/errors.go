@@ -67,6 +67,7 @@ type UseCaseError struct {
 	Err        error  `json:"-"`
 }
 
+// GenerateAPIError - Generate an instance of APIClientError
 func GenerateAPIError(msg string) APIClientError {
 	return APIClientError{
 		Message:    msg,
@@ -76,6 +77,7 @@ func GenerateAPIError(msg string) APIClientError {
 	}
 }
 
+// GenerateDefaultError - Generate an instance of DefaultError
 func GenerateDefaultError(msg string) DefaultError {
 	return DefaultError{
 		Message:    msg,
@@ -85,6 +87,7 @@ func GenerateDefaultError(msg string) DefaultError {
 	}
 }
 
+// GenerateUnprocessableEntityError - Generate an instance of UnprocessableEntityError
 func GenerateUnprocessableEntityError(msg string) UnprocessableEntityError {
 	return UnprocessableEntityError{
 		Message:    msg,
@@ -94,6 +97,7 @@ func GenerateUnprocessableEntityError(msg string) UnprocessableEntityError {
 	}
 }
 
+// GenerateRepositoryError - Generate an instance of RepositoryError
 func GenerateRepositoryError(msg string) RepositoryError {
 	return RepositoryError{
 		Message:    msg,
@@ -103,6 +107,7 @@ func GenerateRepositoryError(msg string) RepositoryError {
 	}
 }
 
+// GenerateNotFoundError - Generate an instance of RepositoryError
 func GenerateNotFoundError(msg string) RepositoryError {
 	return RepositoryError{
 		Message:    msg,
@@ -112,6 +117,7 @@ func GenerateNotFoundError(msg string) RepositoryError {
 	}
 }
 
+// GenerateUseCaseError - Generate an instance of UseCaseError
 func GenerateUseCaseError(msg string) UseCaseError {
 	return UseCaseError{
 		Message:    msg,
