@@ -1,0 +1,20 @@
+version: "2.4"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .
+      args:
+        PORT: ${EXPOSE_PORT}
+    container_name: go_app
+    restart: always
+    volumes:
+      - ./:/usr/src/app
+    env_file: 
+      - .env
+    environment:
+      - PORT
+    ports:
+      - ${EXPOSE_PORT}:${EXPOSE_PORT}
+    # network_mode: host
