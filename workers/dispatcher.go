@@ -12,7 +12,7 @@ import (
 type Dispatcher interface {
 	// Create the worker pool and and return a Dispatch with the channels to handle the jobs.
 	// The number of workers are calculated given ⌈ITEMS / ITEMSPERWORKER⌉
-	SetPoolSize(num int, itemsPerWorker int) *Disp
+	SetPoolSize(num int, itemsPerWorker int, disc string) *Disp
 	// Start - creates pool of num count of workers.
 	// Also dispatch the worker's jobs.
 	Start() *Disp
@@ -31,6 +31,7 @@ type Disp struct {
 	OutputChannel worker.PokemonChan
 	ItemsLimit    int
 	End           worker.End
+	FilterType    string //Should be "odd" or "even"
 }
 
 //  NewDispatcher - New returns a new dispatcher. A Dispatcher communicates between the client
@@ -43,16 +44,20 @@ func NewDispatcher() *Disp {
 
 // SetPoolSize - Create the worker pool and and return a Dispatch with the channels to handle the jobs.
 // The number of workers are calculated given ⌈ITEMS / ITEMSPERWORKER⌉
-func (d *Disp) SetPoolSize(size int, itemsPerWorker int) *Disp {
+func (d *Disp) SetPoolSize(size int, itemsPerWorker int, disc string) *Disp {
 	poolSize := int(math.Floor(float64(size) / float64(itemsPerWorker)))
+	if poolSize <= 0 {
+		poolSize = 1
+	}
 	zap.S().Debug("Pool size obtained: ", poolSize)
 	return &Disp{
 		Workers:       make([]*worker.Worker, poolSize),
 		WorkChan:      make(worker.JobChannel),
 		Queue:         make(worker.JobQueue),
 		OutputChannel: make(worker.PokemonChan),
-		ItemsLimit:    itemsPerWorker,
+		ItemsLimit:    size,
 		End:           make(worker.End),
+		FilterType:    disc,
 	}
 }
 
@@ -69,6 +74,7 @@ func (d *Disp) Start() *Disp {
 			d.OutputChannel,
 			d.End,
 			len(d.Workers),
+			d.FilterType,
 		)
 		wrk.Start()
 		d.Workers = append(d.Workers, wrk)
@@ -95,12 +101,13 @@ func (d *Disp) Stop() {
 // relays it to the WorkPool. The WorkPool is shared between
 // the workers.
 func (d *Disp) process() {
-	for data := range d.WorkChan {
-		work := <-d.WorkChan
-
-		zap.S().Infof("Job ready: ", work)
-		d.Queue <- &data
-
+	// for data := range d.WorkChan {
+	for {
+		select {
+		case work := <-d.WorkChan:
+			zap.S().Infof("Job ready: ", work)
+			d.Queue <- &work
+		}
 	}
 }
 

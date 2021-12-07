@@ -21,9 +21,9 @@ const (
 // Config codes
 const (
 	// MAXIDALLOWED constant represents the maximum threshold of ID seed to generated
-	MAXIDALLOWED = 1000
+	MaxIDAllowed = 1000
 	// MINIDALLOWED constant represents the maximum threshold of ID seed to generated
-	MINIDALLOWED = 10
+	MinIDAllowed = 10
 	// FIXCSVHEADER constant represent the fixing number to skip the first row of CSV
-	FIXCSVHEADER = 1
+	FixCSVHeader = 1
 )

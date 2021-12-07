@@ -91,42 +91,15 @@ func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pok
 
 // BatchFilter - Create the worker pool and dispatch the jobs to recover the items from CSV.
 func (pi *pokemonInteractor) BatchFilter(disc string, items int, itemsPerworker int) []*model.Pokemon {
-	disp := pi.WorkerPool.SetPoolSize(items, itemsPerworker).Start()
+	disp := pi.WorkerPool.SetPoolSize(items, itemsPerworker, disc).Start()
 	defer disp.Stop()
-	for i := 0; i < items; i++ {
-		disp.Submit(pool.Job{
-			ID:        i,
-			Name:      fmt.Sprintf("JobID::%d", i),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		})
-	}
+
+	disp.Submit(pool.Job{
+		ID:        1,
+		Name:      fmt.Sprintf("JobID::%d", 1),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
 	resp := <-disp.OutputChannel
-	return filterSlice(disc, resp)
-}
-
-// Filter the slice of pokemons given a type (odd or even) crate a new slice with the matched results
-// and return it
-func filterSlice(disc string, pokemons []*model.Pokemon) []*model.Pokemon {
-	var slc []*model.Pokemon
-	switch disc {
-	case "odd":
-		for _, p := range pokemons {
-			if !isEven(p.ID) {
-				slc = append(slc, p)
-			}
-		}
-	case "even":
-		for _, p := range pokemons {
-			if isEven(p.ID) {
-				slc = append(slc, p)
-			}
-		}
-	}
-	return slc
-}
-
-// Check if a number is even
-func isEven(num int) bool {
-	return num%2 == 0
+	return resp
 }

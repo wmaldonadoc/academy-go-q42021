@@ -36,8 +36,8 @@ func (pp *pokemonPresenter) ResponsePokemon(p *model.Pokemon) *model.Pokemon {
 func (pp *pokemonPresenter) ResponseMappedPokemonFromAPI(p *api.APIResponse) *model.Pokemon {
 	// Generating random id
 	rand.Seed(time.Now().UnixNano())
-	max := constants.MAXIDALLOWED
-	min := constants.MINIDALLOWED
+	max := constants.MaxIDAllowed
+	min := constants.MinIDAllowed
 	id := rand.Intn(max-min+1) + min
 	zap.S().Info("PRESENTER: ID generate: ", id)
 	// mapping & deserialize JSON

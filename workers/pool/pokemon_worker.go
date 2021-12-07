@@ -1,6 +1,8 @@
 package pool
 
 import (
+	"encoding/csv"
+	"errors"
 	"io"
 	"strconv"
 	"time"
@@ -46,6 +48,7 @@ type Worker struct {
 	OutputChannel PokemonChan // Holds the result of jobs
 	End           End         // Worker end flag
 	WorkersSize   int         // Number of workers available
+	FilterType    string      // Should be "odd" or "even"
 }
 
 // NewPokemonWorker - Create a instance of Worker
@@ -57,6 +60,7 @@ func NewPokemonWorker(
 	out PokemonChan,
 	end End,
 	workerSize int,
+	disc string,
 ) *Worker {
 	zap.S().Infof("Worker ID::%d created", ID)
 	return &Worker{
@@ -67,6 +71,7 @@ func NewPokemonWorker(
 		OutputChannel: out,
 		End:           end,
 		WorkersSize:   workerSize,
+		FilterType:    disc,
 	}
 }
 
@@ -76,10 +81,9 @@ func (wr *Worker) Start() {
 		for {
 			job := <-wr.Queue
 			if job != nil {
-				wr.readPokemons(wr.ItemsLimit, *job)
+				wr.readPokemons(wr.ItemsLimit, *job, wr.FilterType)
 			} else {
 				zap.S().Debugf("Worker %d stopped", wr.ID)
-				wr.End <- true
 				break
 			}
 		}
@@ -106,30 +110,96 @@ func parsePokemon(data [][]string) ([]*model.Pokemon, *pokerrors.DefaultError) {
 
 // readPokemons - Open the CSV file and each worker attach their items recollect to output channel
 
-func (wr *Worker) readPokemons(itemsPerWorker int, job Job) {
+func (wr *Worker) readPokemons(itemsPerWorker int, job Job, disc string) {
 	var result [][]string
 	reader := datastore.OpenFileConcurrently()
-	zap.S().Debugf("Worker ID [%d] working, need to reach %d items", wr.ID, itemsPerWorker)
+	zap.S().Debugf("Worker ID [%d] working, need to reach %d items of type %s", wr.ID, itemsPerWorker, disc)
 
-	items := (itemsPerWorker + wr.WorkersSize) + constants.FIXCSVHEADER
-	for j := 0; j < items; j++ {
-		record, err := reader.Read()
-		if err == io.EOF {
-			zap.S().Infof("End of file")
-			break
-		} else if err != nil {
-			zap.S().Errorf("Worker error", err)
+	items := (itemsPerWorker + wr.WorkersSize) + constants.FixCSVHeader
+	for i := 0; i < items; i++ {
+		row, err := readRow(reader)
+		if err != nil {
 			break
 		}
-		zap.S().Infof("Pokemon worker: ", record)
-		result = append(result, record)
+		switch disc {
+		case "even":
+			record, err := filterEvenRows(row)
+			if err != nil {
+				break
+			}
+			if record != nil {
+				result = append(result, record)
+			}
+
+		case "odd":
+			record, err := filterOddRows(row)
+			if err != nil {
+				break
+			}
+			if record != nil {
+				result = append(result, record)
+			}
+		}
 		zap.S().Debugf("Worker %d collect %d pokemons", wr.ID, len(result))
 	}
-
-	pokemon, pError := parsePokemon(result[1:])
+	pokemon, pError := parsePokemon(result)
+	zap.S().Debug(result)
 	if pError != nil {
 		zap.S().Error("Error parsing pokemons", pError)
 	}
-
 	wr.OutputChannel <- pokemon
+}
+
+func isEven(num int) bool {
+	return num%2 == 0
+}
+
+func readRow(reader *csv.Reader) ([]string, error) {
+	record, err := reader.Read()
+
+	if err == io.EOF {
+		zap.S().Infof("End of file")
+
+		return nil, err
+	} else if err != nil {
+		zap.S().Error("Error reading CSV", err)
+
+		return nil, err
+	}
+
+	return record, nil
+}
+
+func filterEvenRows(record []string) ([]string, error) {
+	id, err := strconv.Atoi(record[0])
+
+	if err != nil {
+		zap.S().Error("Error parsing id", err)
+
+		return nil, err
+	}
+	if isEven(id) {
+		zap.S().Debugf("ID %d is even, append it", id)
+
+		return record, nil
+	}
+
+	return nil, errors.New("nothing found")
+}
+
+func filterOddRows(record []string) ([]string, error) {
+	id, err := strconv.Atoi(record[0])
+
+	if err != nil {
+		zap.S().Error("Error parsing id", err)
+
+		return nil, err
+	}
+	if !isEven(id) {
+		zap.S().Debugf("ID %d is even, append it", id)
+
+		return record, nil
+	}
+
+	return nil, errors.New("nothing found")
 }
