@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -8,10 +9,16 @@ import (
 )
 
 // GetEnvVariable - Return an environment variable, defined in a .env file, given a key.
-func GetEnvVariable(key string) string {
+func GetEnvVariable(key string) (string, error) {
 	if err := godotenv.Load(); err != nil {
 		zap.S().Error("Cant read .env file")
+		return "", err
 	}
+	envkey := os.Getenv(key)
 
-	return os.Getenv(key)
+	if envkey == "" {
+		zap.S().Errorf("Key %s not found", envkey)
+		return "", errors.New("key not found")
+	}
+	return envkey, nil
 }

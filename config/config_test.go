@@ -19,7 +19,7 @@ func TestGetEnvVariable(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := GetEnvVariable(test.key)
+		got, _ := GetEnvVariable(test.key)
 
 		if !reflect.DeepEqual(test.value, got) {
 			t.Fatalf("%s: Expect value %v but got %v", test.name, test.value, got)

@@ -1,36 +1,50 @@
-package controller
+package controller_test
 
 import (
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
+	"github.com/wmaldonadoc/academy-go-q42021/interface/controller"
+	"github.com/wmaldonadoc/academy-go-q42021/mocks"
 )
 
 func TestGetServiceHealth(t *testing.T) {
+	startTime := time.Now()
+	uptime := time.Since(startTime)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	tests := []struct {
 		name       string
 		HTTPStatus int
+		Response   *controller.ControllerResponse
 	}{
-		{name: "Getting a success response", HTTPStatus: http.StatusOK},
+		{
+			name:       "Getting a success response",
+			HTTPStatus: http.StatusOK,
+			Response: &controller.ControllerResponse{
+				HTTPStatus: http.StatusOK,
+				Data: model.Health{
+					Uptime:     uptime,
+					StatusCode: http.StatusOK,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
-		healthController := NewHealthController()
-		resp := healthController.GetServiceHealth(ctx)
+		mockHealthController := &mocks.HealthController{}
 
-		if !reflect.DeepEqual(resp.HTTPStatus, test.HTTPStatus) {
-			t.Errorf("%s: Expected %d but got %d", test.name, test.HTTPStatus, resp.HTTPStatus)
-		}
+		mockHealthController.
+			On("GetServiceHealth", ctx).
+			Return(test.Response)
 
-		if resp.HTTPStatus == 0 {
-			t.Errorf("%s: Expected the field 'HTTPStatus'", test.name)
-		}
-		if resp.Data == nil {
-			t.Errorf("%s: Expected the field 'Data'", test.name)
-		}
+		response := mockHealthController.GetServiceHealth(ctx)
+
+		assert.Equal(t, test.Response.HTTPStatus, response.HTTPStatus)
+		mockHealthController.AssertExpectations(t)
 	}
 }

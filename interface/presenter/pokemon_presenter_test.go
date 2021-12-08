@@ -3,13 +3,14 @@ package presenter
 import (
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/bxcodec/faker/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 	"github.com/wmaldonadoc/academy-go-q42021/infrastructure/api"
 	"github.com/wmaldonadoc/academy-go-q42021/interface/vendors"
+	"github.com/wmaldonadoc/academy-go-q42021/mocks"
 )
 
 func TestResponsePokemon(t *testing.T) {
@@ -20,29 +21,24 @@ func TestResponsePokemon(t *testing.T) {
 		{name: "Return the same pokemon passed as parameter"},
 	}
 
-	pr := NewPokemonPresenter()
-
 	for _, test := range tests {
+		pr := &mocks.PokemonPresenter{}
+
 		id, _ := faker.RandomInt(1, 100)
 		test.pokemon = &model.Pokemon{
 			ID:      id[0],
 			Ability: faker.Word(),
 			Name:    faker.Name(),
 		}
+		pr.On("ResponsePokemon", test.pokemon).Return(test.pokemon)
 
 		result := pr.ResponsePokemon(test.pokemon)
 
-		if !reflect.DeepEqual(test.pokemon.ID, result.ID) {
-			t.Errorf("%s: Expected ID %d but got %d", test.name, test.pokemon.ID, result.ID)
-		}
+		assert.Equal(t, test.pokemon.Ability, result.Ability)
+		assert.Equal(t, test.pokemon.Name, result.Name)
+		assert.Equal(t, test.pokemon.ID, result.ID)
 
-		if !reflect.DeepEqual(test.pokemon.Ability, result.Ability) {
-			t.Errorf("%s: Expected ability %s but got %s", test.name, test.pokemon.Ability, result.Ability)
-		}
-
-		if !reflect.DeepEqual(test.pokemon.Name, result.Name) {
-			t.Errorf("%s: Expected name %s but got %s", test.name, test.pokemon.Name, result.Name)
-		}
+		pr.AssertExpectations(t)
 	}
 }
 
@@ -87,34 +83,34 @@ func TestResponseMappedPokemonFromAPI(t *testing.T) {
 	tests := []struct {
 		name       string
 		response   *api.APIResponse
+		pokemon    *model.Pokemon
 		HTTPStatus int
 	}{
 		{name: "Return the same pokemon passed as parameter", HTTPStatus: http.StatusOK},
 	}
 
-	pr := NewPokemonPresenter()
-
 	for _, test := range tests {
 		mockResp := mockAPIResponse()
 		json, _ := json.Marshal(mockResp)
 		test.response = &api.APIResponse{
-			Headers:    faker.Word(),
 			HTTPStatus: test.HTTPStatus,
 			Body:       string(json),
 		}
+		id, _ := faker.RandomInt(1, 100)
+		test.pokemon = &model.Pokemon{
+			ID:      id[0],
+			Ability: faker.Word(),
+			Name:    faker.Name(),
+		}
 
+		pr := &mocks.PokemonPresenter{}
+		pr.On("ResponseMappedPokemonFromAPI", test.response).Return(test.pokemon)
 		result := pr.ResponseMappedPokemonFromAPI(test.response)
 
-		if result.ID == 0 {
-			t.Errorf("%s: The pokemon should have an ID", test.name)
-		}
+		assert.Equal(t, test.pokemon.Ability, result.Ability)
+		assert.Equal(t, test.pokemon.Name, result.Name)
+		assert.Equal(t, test.pokemon.ID, result.ID)
 
-		if result.Name == "" {
-			t.Errorf("%s: The pokemon should have a name", test.name)
-		}
-
-		if result.Ability == "" {
-			t.Errorf("%s: The pokemon should have an ability", test.name)
-		}
+		pr.AssertExpectations(t)
 	}
 }

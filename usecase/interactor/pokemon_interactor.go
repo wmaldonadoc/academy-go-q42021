@@ -1,7 +1,6 @@
 package interactor
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type pokemonInteractor struct {
+type InteractorPokemon struct {
 	PokemonRepository repository.PokemonRepository
 	PokemonPresenter  presenter.PokemonPresenter
 	HTTPClient        vendors.HTTPClient
@@ -40,12 +39,12 @@ func NewPokemonInteractor(
 	p presenter.PokemonPresenter,
 	client vendors.HTTPClient,
 	disp workers.Dispatcher,
-) *pokemonInteractor {
-	return &pokemonInteractor{r, p, client, disp}
+) *InteractorPokemon {
+	return &InteractorPokemon{r, p, client, disp}
 }
 
 // GetById - Returns a pokemon given an ID.
-func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *pokerrors.UseCaseError) {
+func (pi *InteractorPokemon) GetByID(id int) (*model.Pokemon, *pokerrors.UseCaseError) {
 	p, err := pi.PokemonRepository.FindByID(id)
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error getting pokemon %s", err.Err)
@@ -58,7 +57,7 @@ func (pi *pokemonInteractor) GetByID(id int) (*model.Pokemon, *pokerrors.UseCase
 }
 
 // CreateOne - Append the new pokemon row to CSV file.
-func (pi *pokemonInteractor) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.UseCaseError) {
+func (pi *InteractorPokemon) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.UseCaseError) {
 	p, err := pi.PokemonRepository.CreateOne(pokemon)
 	if err != nil {
 		zap.S().Errorf("INTERACTOR: Error storing pokemon record %s", err)
@@ -69,7 +68,7 @@ func (pi *pokemonInteractor) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, 
 }
 
 // GetPokemonByName - Get the pokemon from PokeAPI given the name and return it as Pokemon model.
-func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError) {
+func (pi *InteractorPokemon) GetPokemonByName(name string) (*model.Pokemon, *pokerrors.UseCaseError) {
 	resp, err := pi.HTTPClient.Get("https://pokeapi.co/api/v2/pokemon/" + name)
 
 	if resp.HTTPStatus != http.StatusOK {
@@ -90,13 +89,12 @@ func (pi *pokemonInteractor) GetPokemonByName(name string) (*model.Pokemon, *pok
 }
 
 // BatchFilter - Create the worker pool and dispatch the jobs to recover the items from CSV.
-func (pi *pokemonInteractor) BatchFilter(disc string, items int, itemsPerworker int) []*model.Pokemon {
+func (pi *InteractorPokemon) BatchFilter(disc string, items int, itemsPerworker int) []*model.Pokemon {
 	disp := pi.WorkerPool.SetPoolSize(items, itemsPerworker, disc).Start()
 	defer disp.Stop()
 
 	disp.Submit(pool.Job{
-		ID:        1,
-		Name:      fmt.Sprintf("JobID::%d", 1),
+		Name:      "Job: Find pokemons",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})

@@ -1,106 +1,85 @@
-package repository
+package repository_test
 
 import (
-	"encoding/json"
-	"reflect"
+	"errors"
+	"net/http"
 	"testing"
-	"testing/fstest"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/wmaldonadoc/academy-go-q42021/constants"
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
+	"github.com/wmaldonadoc/academy-go-q42021/mocks"
+	"github.com/wmaldonadoc/academy-go-q42021/pokerrors"
 
 	"github.com/bxcodec/faker/v3"
 )
 
 func TestFindByID(t *testing.T) {
-	var pokemons []*model.Pokemon
-
-	for i := 0; i < 10; i++ {
-		pokemon := model.Pokemon{
-			ID:      i,
-			Name:    faker.Name(),
-			Ability: faker.Word(),
-		}
-		pokemons = append(pokemons, &pokemon)
-	}
 
 	tests := []struct {
 		name    string
 		id      int
-		errCode int
+		pokemon *model.Pokemon
+		err     *pokerrors.RepositoryError
 	}{
-		{name: "Return a pokemon", id: 1},
-		{name: "Return a not found error", id: 100, errCode: constants.NotFoundExceptionCode},
+		{name: "Return a pokemon", id: 1, err: nil, pokemon: &model.Pokemon{
+			ID:      1,
+			Name:    faker.Name(),
+			Ability: faker.Word(),
+		}},
+		{name: "Return a not found error", id: 100, pokemon: nil, err: &pokerrors.RepositoryError{
+			Message:    "Pokemon not found",
+			HTTPStatus: http.StatusNotFound,
+			Code:       constants.NotFoundExceptionCode,
+			Err:        errors.New("pokemon not found"),
+		}},
 	}
 
-	repo := NewPokemonRepository(pokemons)
 	for _, test := range tests {
+		repo := &mocks.PokemonRepository{}
+
+		repo.On("FindByID", test.id).Return(test.pokemon, test.err)
 		result, err := repo.FindByID(test.id)
 
-		if test.errCode != 0 {
-			if !reflect.DeepEqual(err.Code, test.errCode) {
-				t.Errorf("%s: Expected %d but got %d", test.name, test.errCode, err.Code)
-			}
-		}
+		assert.Equal(t, test.pokemon, result)
+		assert.Equal(t, test.err, err)
 
-		if test.errCode == 0 {
-			if !reflect.DeepEqual(result.ID, test.id) {
-				t.Errorf("%s: Expected %d but got %d", test.name, test.id, result.ID)
-			}
-		}
+		repo.AssertExpectations(t)
+
 	}
 }
 
 func TestCreateOne(t *testing.T) {
-	var pokemons []*model.Pokemon
-
-	for i := 0; i < 10; i++ {
-		pokemon := model.Pokemon{
-			ID:      i,
-			Name:    faker.Name(),
-			Ability: faker.Word(),
-		}
-		pokemons = append(pokemons, &pokemon)
-	}
 
 	tests := []struct {
-		name       string
-		id         int
-		errCode    int
-		shouldFail bool
+		name    string
+		id      int
+		pokemon *model.Pokemon
+		err     *pokerrors.RepositoryError
 	}{
-		{name: "Failed storing a pokemon", errCode: constants.DefaultExceptionCode, shouldFail: true},
-		{name: "Storing a pokemon", shouldFail: false},
+		{name: "Failed storing a pokemon", pokemon: nil, err: &pokerrors.RepositoryError{
+			Message:    "Pokemon not found",
+			HTTPStatus: http.StatusNotFound,
+			Code:       constants.NotFoundExceptionCode,
+			Err:        errors.New("pokemon not found"),
+		}},
+		{name: "Storing a pokemon", err: nil, pokemon: &model.Pokemon{
+			ID:      1,
+			Name:    faker.Name(),
+			Ability: faker.Word(),
+		}},
 	}
 
-	repo := NewPokemonRepository(pokemons)
+	for _, test := range tests {
 
-	for i, test := range tests {
-		json, _ := json.Marshal(pokemons)
-		mockFS := fstest.MapFS{
-			"data.csv": {
-				Data: []byte(json),
-			},
-		}
+		repo := &mocks.PokemonRepository{}
+		repo.On("CreateOne", test.pokemon).Return(test.pokemon, test.err)
 
-		data, errFS := mockFS.ReadFile("data.csv")
+		result, err := repo.CreateOne(test.pokemon)
 
-		if errFS != nil {
-			t.Error(errFS)
-		}
-		t.Log(data)
-		pokemonAt := pokemons[i]
-		test.id = pokemonAt.ID
-		result, err := repo.CreateOne(pokemonAt)
+		assert.Equal(t, test.pokemon, result)
+		assert.Equal(t, test.err, err)
 
-		if test.shouldFail {
-			if !reflect.DeepEqual(test.errCode, err.Code) {
-				t.Errorf("%s: Expected error code %d but got %d", test.name, test.errCode, err.Code)
-			}
-		} else {
-			if !reflect.DeepEqual(result.ID, test.id) {
-				t.Errorf("%s: Expected %d but got %d", test.name, test.id, result.ID)
-			}
-		}
+		repo.AssertExpectations(t)
 	}
 }

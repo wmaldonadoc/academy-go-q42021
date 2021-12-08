@@ -13,20 +13,30 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func bootingGlobalLogger() *zap.Logger {
+func bootingGlobalLogger() (*zap.Logger, error) {
 	// Replacing logger global
 	config := zap.NewDevelopmentConfig()
 	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	logger, _ := config.Build()
+	logger, err := config.Build()
 
-	return logger
+	if err != nil {
+		return nil, err
+	}
+
+	return logger, nil
 }
 
 func main() {
-	port := config.GetEnvVariable("PORT")
-	loggerMgr := bootingGlobalLogger()
+
+	// Setting zap as global logger
+	loggerMgr, zapError := bootingGlobalLogger()
+
+	if zapError != nil {
+		zap.S().Errorf("Zap bootstrap error", zapError)
+	}
+
 	zap.ReplaceGlobals(loggerMgr)
 	defer func() {
 		err := loggerMgr.Sync()
@@ -35,17 +45,27 @@ func main() {
 		}
 	}()
 	logger := loggerMgr.Sugar()
+
+	// Bootsraping CSV connection
 	var openFunc = os.Open
-	filePath := config.GetEnvVariable("FILE_LOCATION")
+	filePath, fpError := config.GetEnvVariable("FILE_LOCATION")
+	if fpError != nil {
+		zap.S().Errorf("Error getting env key", fpError)
+	}
 	db, err := datastore.NewCSV(filePath, openFunc)
 	if err != nil {
 		zap.S().Error("Error bootstraping CSV file")
 	}
 	r := registry.NewRegistry(db)
 
+	// Running Router
 	logger.Debug("Booting routes...")
 	rtr := router.NewRouter(r.NewAppController())
 
+	port, envError := config.GetEnvVariable("PORT")
+	if envError != nil {
+		zap.S().Errorf("Error getting env key", envError)
+	}
 	if err := rtr.Run(port); err != nil {
 		zap.S().Error("Error bootstraping router", err)
 	}

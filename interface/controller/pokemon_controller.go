@@ -18,8 +18,8 @@ type ControllerResponse struct {
 	Data       interface{} `json:"data"`
 }
 
-type pokemonController struct {
-	pokemonInteractor interactor.PokemonInteractor
+type ControllerPokemon struct {
+	PokemonInteractor interactor.PokemonInteractor
 }
 
 // PokemonController - Holds the abstraction of controller methods.
@@ -38,13 +38,13 @@ type PokemonController interface {
 }
 
 // NewPokemonController - Receive the controller interactor and returns a conrete instance of the controller.
-func NewPokemonController(pi interactor.PokemonInteractor) *pokemonController {
-	return &pokemonController{pi}
+func NewPokemonController(pi interactor.PokemonInteractor) *ControllerPokemon {
+	return &ControllerPokemon{pi}
 }
 
 // GeyByID - Receive the HTTP request context, find the pokemon by ID and return it.
 // It will return an error as HTTP response if something goes wrong.
-func (pc *pokemonController) GetByID(c Context) *ControllerResponse {
+func (pc *ControllerPokemon) GetByID(c Context) *ControllerResponse {
 	requestError := pokerrors.DefaultError{}
 	response := ControllerResponse{}
 	var req schemas.GetPokemonById
@@ -59,7 +59,7 @@ func (pc *pokemonController) GetByID(c Context) *ControllerResponse {
 
 		return &response
 	}
-	p, err := pc.pokemonInteractor.GetByID(req.ID)
+	p, err := pc.PokemonInteractor.GetByID(req.ID)
 	if err != nil {
 		zap.S().Errorf("CONTROLLER: Error searching pokemon by id %s", err)
 		requestError.Code = constants.NotFoundExceptionCode
@@ -81,7 +81,7 @@ func (pc *pokemonController) GetByID(c Context) *ControllerResponse {
 // GetByName - Receive the HTTP request context, it will request the pokemon name from an API then will stored it and finally it will return it as HTTP response.
 // It will return an error as HTTP response if something goes wrong.
 // If the HTTP request fails nothing will gonna be stored.
-func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
+func (pc *ControllerPokemon) GetByName(c Context) *ControllerResponse {
 	requestError := pokerrors.DefaultError{}
 	response := ControllerResponse{}
 	var req schemas.GetPokemonByName
@@ -97,7 +97,7 @@ func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
 		return &response
 
 	}
-	resp, err := pc.pokemonInteractor.GetPokemonByName(req.Name)
+	resp, err := pc.PokemonInteractor.GetPokemonByName(req.Name)
 	if err != nil {
 		zap.S().Errorf("CONTROLLER: Error getting pokemon %s", req.Name)
 		requestError.Code = constants.DefaultExceptionCode
@@ -110,7 +110,7 @@ func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
 		return &response
 
 	}
-	record, repositoryError := pc.pokemonInteractor.CreateOne(resp)
+	record, repositoryError := pc.PokemonInteractor.CreateOne(resp)
 	if repositoryError != nil {
 		zap.S().Error("CONTROLLER: Error storing pokemon")
 		requestError.Code = constants.DefaultExceptionCode
@@ -131,7 +131,7 @@ func (pc *pokemonController) GetByName(c Context) *ControllerResponse {
 
 // FilterSearching - Reads the CSV file using a worker pool and return the requested items.
 // It will return an error as HTTP response if something goes wrong.
-func (pc *pokemonController) FilterSearching(c Context) *ControllerResponse {
+func (pc *ControllerPokemon) FilterSearching(c Context) *ControllerResponse {
 	requestError := pokerrors.DefaultError{}
 	response := ControllerResponse{}
 	var req schemas.BatchSearchingSchema
@@ -152,7 +152,7 @@ func (pc *pokemonController) FilterSearching(c Context) *ControllerResponse {
 	zap.S().Infof("Request: ", req.Items)
 	zap.S().Infof("Request: ", req.ItemsPerWorker)
 	zap.S().Infof("Request: ", req.Type)
-	resp := pc.pokemonInteractor.BatchFilter(req.Type, req.Items, req.ItemsPerWorker)
+	resp := pc.PokemonInteractor.BatchFilter(req.Type, req.Items, req.ItemsPerWorker)
 	response.HTTPStatus = http.StatusOK
 	response.Data = resp
 

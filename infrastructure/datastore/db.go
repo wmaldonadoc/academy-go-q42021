@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/csv"
 	"io"
-	"log"
 	"os"
 	"strconv"
 
@@ -20,6 +19,7 @@ type OpenCSV func(name string) (*os.File, error)
 func openFile(fileLocation string, openFunc OpenCSV) ([][]string, *pokerrors.DefaultError) {
 	file, err := openFunc(fileLocation)
 	zap.S().Debugf("File located at: ", fileLocation)
+
 	if err != nil {
 		zap.S().Errorf("Error opening the CSV file %s", err)
 		conError := pokerrors.GenerateDefaultError(err.Error())
@@ -33,12 +33,15 @@ func openFile(fileLocation string, openFunc OpenCSV) ([][]string, *pokerrors.Def
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
 		conError := pokerrors.GenerateDefaultError(err.Error())
+
 		return nil, &conError
 	}
+
 	_, err = file.Seek(int64(len(row1)), io.SeekStart)
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
 		conError := pokerrors.GenerateDefaultError(err.Error())
+
 		return nil, &conError
 	}
 
@@ -46,6 +49,7 @@ func openFile(fileLocation string, openFunc OpenCSV) ([][]string, *pokerrors.Def
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file %s", err)
 		conError := pokerrors.GenerateDefaultError(err.Error())
+
 		return nil, &conError
 	}
 
@@ -54,14 +58,19 @@ func openFile(fileLocation string, openFunc OpenCSV) ([][]string, *pokerrors.Def
 
 // OpenFileConcurrently - Open a CSV file given an env var, and return the reader.
 func OpenFileConcurrently() *csv.Reader {
-	fileLocation := config.GetEnvVariable("FILE_LOCATION")
+	fileLocation, envError := config.GetEnvVariable("FILE_LOCATION")
+
+	if envError != nil {
+		zap.S().Errorf("Env key not found", envError)
+	}
+
 	csvfile, err := os.Open(fileLocation)
 	if err != nil {
 		zap.S().Errorf("Error reading the CSV file concurrently %s", err)
-		log.Fatal(err)
 	}
 	// defer csvfile.Close()
 	reader := csv.NewReader(csvfile)
+
 	return reader
 }
 

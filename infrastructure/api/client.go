@@ -20,7 +20,7 @@ type HTTPHandler interface {
 //	- Body: HTTP response body as string
 //	- HTTPStatus: HTTP response status
 type APIResponse struct {
-	Headers    interface{}
+	Headers    http.Header
 	Body       string
 	HTTPStatus int
 }
@@ -41,20 +41,26 @@ func (handler *HTTPClient) Get(url string) (*APIResponse, *pokerrors.APIClientEr
 	if err != nil {
 		zap.S().Error("Error to request GET to " + url)
 		requestError := pokerrors.GenerateAPIError("Error requesting third part API")
+
 		return nil, &requestError
 	}
+
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
 		readingError := pokerrors.GenerateAPIError("Error reading response body")
 		zap.S().Errorf("Error reading response body %s", readingError)
 		return nil, &readingError
 	}
+
 	response := APIResponse{
 		Headers:    resp.Header,
 		Body:       string(body),
 		HTTPStatus: resp.StatusCode,
 	}
+
 	zap.S().Debugf("Api response %s", response)
 
 	return &response, nil

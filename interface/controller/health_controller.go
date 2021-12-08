@@ -7,7 +7,7 @@ import (
 	"github.com/wmaldonadoc/academy-go-q42021/domain/model"
 )
 
-type healthController struct{}
+type ControllerHealth struct{}
 
 // HealthController - Holds the abstraction of controller methods.
 type HealthController interface {
@@ -16,12 +16,12 @@ type HealthController interface {
 }
 
 // NewHealthController - Create and returns an instance of healthController.
-func NewHealthController() *healthController {
-	return &healthController{}
+func NewHealthController() *ControllerHealth {
+	return &ControllerHealth{}
 }
 
 // GetServiceHealth - Calculate the uptime and return an instance of Health.
-func (hc *healthController) GetServiceHealth(c Context) *ControllerResponse {
+func (hc *ControllerHealth) GetServiceHealth(c Context) *ControllerResponse {
 	response := ControllerResponse{}
 	startTime := time.Now()
 	uptime := time.Since(startTime)

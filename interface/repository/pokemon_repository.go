@@ -44,7 +44,12 @@ func (pr *pokemonRepository) FindByID(id int) (*model.Pokemon, *pokerrors.Reposi
 // CreateOne - Append a new row in the CSV file.
 // It will return an error if something with the CSV fail.
 func (pr *pokemonRepository) CreateOne(pokemon *model.Pokemon) (*model.Pokemon, *pokerrors.RepositoryError) {
-	fileLocation := config.GetEnvVariable("FILE_LOCATION")
+	fileLocation, envError := config.GetEnvVariable("FILE_LOCATION")
+
+	if envError != nil {
+		zap.S().Errorf("Env key not found", envError)
+	}
+
 	file, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
 		w := csv.NewWriter(file)
