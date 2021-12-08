@@ -1,0 +1,64 @@
+{
+	"info": {
+		"_postman_id": "f4cb7351-5fda-4665-91bb-4a2ad59a59ce",
+		"name": "API v1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL}}/health",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get pokemon by name",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL}}/pokemons/name/ditto",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"pokemons",
+						"name",
+						"ditto"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get pokemon by name",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL}}/pokemons/name/ditto",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"pokemons",
+						"name",
+						"ditto"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
